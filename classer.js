@@ -59,17 +59,18 @@ function Main() {
 				height: unitHeight,
 			});
 	var echoblocksRoot = svg.append('g');
-	var echoblocksData = d3.range(numSecondBlocks*ebPerSec).map(function() { return unitHeight*1; });
+	var echoblocksData = d3.range(numSecondBlocks*ebPerSec).map(function() { return '0'; });
 	var echoblocksGs = echoblocksRoot.selectAll('g').data(echoblocksData);
 	echoblocksGs.enter()
 		.append('g').each(function(d) {
 			d3.select(this).append('rect')
-				.attr('class', 'echoblock-rect unclassed')
+				.classed('echoblock-rect', true)
+				.classed('class'+d, true)
 				.attr({
 					x: 0,
 					y: 0,
 					width: minPxPerSec/ebPerSec,
-					height: function(d) { return d; },
+					height: unitHeight,
 				});
 			d3.select(this).append('text')
 				.classed('text-label', true)
@@ -77,7 +78,7 @@ function Main() {
 					x: 0.5*minPxPerSec*ebPerSec,
 					y: 0*unitHeight+1*15,
 				})
-				.text('');
+				.text(d);
 		});
 	echoblocksGs
 		.attr('transform', function(d,i) {
@@ -101,14 +102,10 @@ function Main() {
 	});
 	wavesurfer.on('seek', function(progress) {
 		// On seeking. Callback will receive (float) progress [0..1].
-		console.log('seek');
-		console.log(progress);
 		secondsFloat = (progress*wavesurfer.getDuration()).toFixed(1);
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
 		// On zooming. Callback will receive (integer) minPxPerSec.
-		console.log('zoom');
-		console.log(minPxPerSec);
 	});
 	// wavesurfer.on('error', function(a, b, c, d, e, f) {
 	// 	// Occurs on error. Callback will receive (string) error message.
@@ -173,66 +170,78 @@ function Main() {
 
 	var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 	var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
-	var letterToClass = {}, oldFormValues = {};
-	d3.selectAll('#class1-form').datum('class1');
-	d3.selectAll('#class2-form').datum('class2');
+	var letterToClass = {};
+	d3.selectAll('#class1-form').datum({class:'1'});
+	d3.selectAll('#class2-form').datum({class:'2'});
 	d3.selectAll('#class1-form, #class2-form')
 		.each(function(d) {
-			letterToClass[this.value.toUpperCase()] = d;
-		})
-		.on('keydown', function(d) {
-			oldFormValues[d] = this.value.toUpperCase();
+			this.value = this.value.toUpperCase();
+			d.value = this.value;
+			letterToClass[d.value] = d.class;
 		})
 		.on('keyup', function(d) {
-			if (letterArray.indexOf(this.value.toUpperCase()) === -1 && numberArray.indexOf(this.value.toUpperCase()) === -1) {
-				this.value = oldFormValues[d];
+			this.value = this.value.toUpperCase();
+			if (letterArray.indexOf(this.value) === -1 && numberArray.indexOf(this.value) === -1) {
+				this.value = d.value;
+			} else {
+				delete(letterToClass[d.value]);
+				d.value = this.value;
+				letterToClass[d.value] = d.class;
 			}
-			delete(letterToClass[oldFormValues[d]]);
-			letterToClass[this.value.toUpperCase()] = d;
+		})
+		.on('change', function(d) {
+			this.value = this.value.toUpperCase();
 		});
 
-	var keyPressedArray, keysPressedData = [], currentString = '';
+	var keyPressedArray, classHistoryData = [], currentString = '';
+	var classCounter = {'0':echoblocksData.length, '1':0, '2':0};
+	d3.select('#class-counters')
+		.text('0:'+classCounter['0']+' 1:'+classCounter['1']+' 2:'+classCounter['2'])
 	var keyToLetter = {
 		// 32:' ',
 		48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
 		65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
 		// 188:',',190:'.',
 	};
+	var lastKeyDown = undefined;
 	$(document)
 		.bind('keydown', function(e) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
 			var letter = keyToLetter[e.which];
 			if (letter === undefined) { return; }
 			letter = letter.toUpperCase();
-
+			var classNumber = (letterToClass[letter] !== undefined) ? letterToClass[letter] : '0';
 			var second = Math.floor(secondsFloat);
 			d3.select(echoblocksGs[0][second*ebPerSec])
+				.datum(classNumber)
 				.each(function(d) {
-					var newClass = (letterToClass[letter] !== undefined) ? letterToClass[letter] : 'unclassed';
-					var newClassLetter = (letterToClass[letter] !== undefined) ? letterToClass[letter][5] : '';
 					d3.select(this).selectAll('text')
-						.text(newClassLetter);
+						.text(d);
 					d3.select(this).selectAll('rect')
 						.attr('class', 'echoblock-rect') // reset classes
-						.classed(newClass, true);
+						.classed('class'+d, true);
 				});
+			echoblocksData[second*ebPerSec] = classNumber;
+			classCounter['0'] = d3.sum(echoblocksData, function(d) { return d === '0'; });
+			classCounter['1'] = d3.sum(echoblocksData, function(d) { return d === '1'; });
+			classCounter['2'] = d3.sum(echoblocksData, function(d) { return d === '2'; });
+			d3.select('#class-counters')
+				.text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
 			d3.select('#key-pressed')
 				.text(letter);
-		    currentString += letter;
-		    d3.select('#current-string')
-		    	.text(currentString);
+			if (e.which === lastKeyDown) { return; }
+			lastKeyDown = e.which;
+			// currentString += letter;
+		 //    d3.select('#current-string')
+		 //    	.text(currentString);
+			classHistoryData.push(classNumber);
+			d3.select('#class-history')
+				.text('['+classHistoryData+']');
 		})
 		.bind('keyup', function(e) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
-			var letter = keyToLetter[e.which];
-			if (letter === undefined) { return; }
-			letter = letter.toUpperCase();
-
 			d3.select('#key-pressed')
 				.text('');
-			keysPressedData.push(letter);
-			d3.select('#key-history')
-				.text('['+keysPressedData+']');
 		});
 }
 

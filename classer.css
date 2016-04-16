@@ -24,7 +24,10 @@ body {
 	// stroke-width: 1px;
 	opacity: 0.5;
 }
-rect.unclassed {
+#class1-form, #class2-form {
+	text-transform: uppercase;
+}
+rect.class0 {
 	fill: white;
 }
 div.class1 {

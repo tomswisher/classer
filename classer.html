@@ -7,8 +7,8 @@
 <body>
 
 <div id='classer-settings' class='unloaded'>
-	<div class='settings'><div class='class1 inline'>Class 1</div> is letter: <input type='form' id='class1-form' value='Z'></input></div>
-	<div class='settings'><div class='class2 inline'>Class 2</div> is letter: <input type='form' id='class2-form' value='X'></input></div>
+	<div class='settings'><div class='class1 inline'>Class 1</div> is letter: <input type='form' id='class1-form' size='1' maxlength='1' value='Z'></input></div>
+	<div class='settings'><div class='class2 inline'>Class 2</div> is letter: <input type='form' id='class2-form' size='1' maxlength='1' value='X'></input></div>
 </div>
 <br>
 <div id='wavesurfer-container' class='unloaded'>
@@ -24,11 +24,13 @@
 		<div>Zoom Level: <div class='inline' id='zoom-level'>1</div></div>
 		<div><input id='zoom-slider' type='range' min='1' max='2' step='0.1' value='1' style='width: 100%' /></div>
 		<br>
+		<div>Class Counters: <div class='inline' id='class-counters'></div></div>
+		<br>
 		<div>Key Pressed: <div class='inline' id='key-pressed'></div></div>
 		<br>
 		<!-- <div>Current String: <div class='inline' id='current-string'></div></div>
 		<br> -->
-		<div>Key History: <div class='wrap' id='key-history'>[]</div></div>
+		<div>Class History: <div class='wrap' id='class-history'>[]</div></div>
 	</div>
 </div>
 
