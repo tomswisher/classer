@@ -32,9 +32,16 @@ var wavesurfer = WaveSurfer.create({
 	// "autoCenter": true,
 	// "wavecolor": "green"
 });
-
-wavesurfer.load('audio/'+songURL);
+wavesurfer.on('loading', function() {
+	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
+});
 wavesurfer.on('ready', function() {
+	// When audio is loaded, decoded and the waveform drawn.
+	Main();
+});
+wavesurfer.load('audio/'+songURL);
+
+function Main() {
 	var unitHeight = wavesurfer.params.height;
 	var minPxPerSec = wavesurfer.drawer.params.minPxPerSec;
 	var ebPerSec = 1;
@@ -81,16 +88,52 @@ wavesurfer.on('ready', function() {
 
 	d3.selectAll('.unloaded').classed('unloaded', false);
 
-	var oldTime = 0, oldSeconds = 0, seconds = 0;
+	var oldTime = 0, oldSeconds = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
-		if (time <= oldTime) { return; } // bug in audioprocess that sets time to 0.xxx seconds
+		// Fires continuously as the audio plays. Also fires on seeking.
+		if (time <= oldTime) { return; } // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
-		seconds = time.toFixed(1);
-		if (seconds !== oldSeconds) {
-			oldSeconds = seconds;
-			d3.select('#current-time').text(seconds+'s');
+		secondsFloat = time.toFixed(1);
+		if (secondsFloat !== oldSeconds) {
+			oldSeconds = secondsFloat;
+			d3.select('#current-time').text(secondsFloat+'s');
 		}
 	});
+	wavesurfer.on('seek', function(progress) {
+		// On seeking. Callback will receive (float) progress [0..1].
+		console.log('seek');
+		console.log(progress);
+		secondsFloat = (progress*wavesurfer.getDuration()).toFixed(1);
+	});
+	wavesurfer.on('zoom', function(minPxPerSec) {
+		// On zooming. Callback will receive (integer) minPxPerSec.
+		console.log('zoom');
+		console.log(minPxPerSec);
+	});
+	// wavesurfer.on('error', function(a, b, c, d, e, f) {
+	// 	// Occurs on error. Callback will receive (string) error message.
+	// 	console.log('error');
+	// 	console.log(a, b, c, d, e, f);
+	// });
+	// wavesurfer.on('finish', function(a, b, c, d, e, f) {
+	// 	// When it finishes playing.
+	// 	console.log('finish');
+	// 	console.log(a, b, c, d, e, f);
+	// });
+	// wavesurfer.on('pause', function() {
+	// 	// When audio is paused.
+	// 	console.log('pause');
+	// });
+	// wavesurfer.on('play', function() {
+	// 	// When play starts.
+	// 	console.log('play');
+	// });
+	// wavesurfer.on('scroll', function(scrollEvent) {
+	// 	// When the scrollbar is moved. Callback will receive a ScrollEvent object.
+	// 	console.log('scroll');
+	// 	console.log(scrollEvent);
+	// });
+
 
 	d3.select('#play-pause-button')
 		.on('click', function() {
@@ -162,7 +205,7 @@ wavesurfer.on('ready', function() {
 			if (letter === undefined) { return; }
 			letter = letter.toUpperCase();
 
-			var second = Math.floor(seconds);
+			var second = Math.floor(secondsFloat);
 			d3.select(echoblocksGs[0][second*ebPerSec])
 				.each(function(d) {
 					var newClass = (letterToClass[letter] !== undefined) ? letterToClass[letter] : 'unclassed';
@@ -191,4 +234,64 @@ wavesurfer.on('ready', function() {
 			d3.select('#key-history')
 				.text('['+keysPressedData+']');
 		});
+}
+
+/*
+wavesurfer.destroy(); // – Removes events, elements and disconnects Web Audio nodes.
+wavesurfer.empty(); // – Clears the waveform as if a zero-length audio is loaded.
+wavesurfer.getCurrentTime(); // – Returns current progress in secondsFloat.
+wavesurfer.getDuration(); // – Returns the duration of an audio clip in secondsFloat.
+wavesurfer.isPlaying(); // – Returns true if currently playing, false otherwise.
+wavesurfer.load(url); // – Loads audio from URL via XHR. Returns XHR object.
+wavesurfer.loadBlob(url); // – Loads audio from a Blob or File object.
+wavesurfer.on(eventName, callback); // – Subscribes to an event. See WaveSurfer Events for the list of all events.
+wavesurfer.un(eventName, callback); // – Unsubscribes from an event.
+wavesurfer.unAll(); // – Unsubscribes from all events.
+wavesurfer.pause(); // – Stops playback.
+wavesurfer.play([start[, end]]); // – Starts playback from the current position. Optional start and end measured in secondsFloat can be used to set the range of audio to play.
+wavesurfer.playPause(); // – Plays if paused, pauses if playing.
+wavesurfer.seekAndCenter(progress); // – Seeks to a progress and centers view [0..1] (0 = beginning, 1 = end).
+wavesurfer.seekTo(progress); // – Seeks to a progress [0..1] (0 = beginning, 1 = end).
+wavesurfer.setFilter(filters); // - For inserting your own WebAudio nodes into the graph. See Connecting Filters below.
+wavesurfer.setPlaybackRate(rate); // – Sets the speed of playback (0.5 is half speed, 1 is normal speed, 2 is double speed and so on).
+wavesurfer.setVolume(newVolume); // – Sets the playback volume to a new value [0..1] (0 = silent, 1 = maximum).
+wavesurfer.skip(offset); // – Skip a number of secondsFloat from the current position (use a negative value to go backwards).
+wavesurfer.skipBackward(); // - Rewind skipLength secondsFloat.
+wavesurfer.skipForward(); // - Skip ahead skipLength secondsFloat.
+wavesurfer.stop(); // – Stops and goes to the beginning.
+wavesurfer.toggleMute(); // – Toggles the volume on and off.
+wavesurfer.toggleInteraction(); // – Toggle mouse interaction.
+wavesurfer.toggleScroll(); // – Toggles scrollParent.
+wavesurfer.zoom(pxPerSec); // – Horiontally zooms the waveform in and out. The parameter is a number of horizontal pixels per second of audio. It also changes the parameter minPxPerSec and enables the scrollParent option.
+
+wavesurfer.on('audioprocess', function() {
+	// – Fires continuously as the audio plays. Also fires on seeking.
 });
+wavesurfer.on('error', function() {
+	// – Occurs on error. Callback will receive (string) error message.
+});
+wavesurfer.on('finish', function() {
+	// – When it finishes playing.
+});
+wavesurfer.on('loading', function() {
+	// – Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
+});
+wavesurfer.on('pause', function() {
+	// – When audio is paused.
+});
+wavesurfer.on('play', function() {
+	// – When play starts.
+});
+wavesurfer.on('ready', function() {
+	// – When audio is loaded, decoded and the waveform drawn.
+});
+wavesurfer.on('scroll', function() {
+	// - When the scrollbar is moved. Callback will receive a ScrollEvent object.
+});
+wavesurfer.on('seek', function() {
+	// – On seeking. Callback will receive (float) progress [0..1].
+});
+wavesurfer.on('zoom', function() {
+	// – On zooming. Callback will receive (integer) minPxPerSec.
+});
+*/
