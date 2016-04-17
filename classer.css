@@ -14,15 +14,19 @@ body {
 .scrolls {
 	overflow-x: scroll;
 }
-.text-label {
+.label {
 	font-size: 15px;
 	dominant-baseline: middle;
 	text-anchor: middle;
 }
-.echoblock-rect {
+text.label {
+	stroke: black;
+	stroke-width: 1px;
+}
+.block-rect {
 	// stroke: white;
 	// stroke-width: 1px;
-	opacity: 0.5;
+	opacity: 0.6;
 }
 #class1-form, #class2-form {
 	text-transform: uppercase;

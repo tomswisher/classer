@@ -3,8 +3,8 @@
 var songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
-	wavecolor: 'green',
-	progressColor: 'blue',
+	wavecolor: '#000',
+	progressColor: 'green',
 	// "height": 128,
 	// "waveColor": "#999",
 	// "progressColor": "blue",
@@ -44,7 +44,7 @@ wavesurfer.load('audio/'+songURL);
 function Main() {
 	var unitHeight = wavesurfer.params.height;
 	var minPxPerSec = wavesurfer.drawer.params.minPxPerSec;
-	var ebPerSec = 1;
+	var blocksPerSec = 10;
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 	var wsZoomScale = d3.scale.linear()
 		.domain([1,2])
@@ -58,34 +58,48 @@ function Main() {
 				width: minPxPerSec*wavesurfer.getDuration(),
 				height: unitHeight,
 			});
-	var echoblocksRoot = svg.append('g');
-	var echoblocksData = d3.range(numSecondBlocks*ebPerSec).map(function() { return '0'; });
-	var echoblocksGs = echoblocksRoot.selectAll('g').data(echoblocksData);
-	echoblocksGs.enter()
+	var blocksRoot = svg.append('g');
+	var blocksData = d3.range(numSecondBlocks*blocksPerSec).map(function() { return '0'; });
+	var blocksGs = blocksRoot.selectAll('g').data(blocksData);
+	blocksGs.enter()
 		.append('g').each(function(d) {
 			d3.select(this).append('rect')
-				.classed('echoblock-rect', true)
+				.classed('block-rect', true)
 				.classed('class'+d, true)
 				.attr({
 					x: 0,
 					y: 0,
-					width: minPxPerSec/ebPerSec,
+					width: minPxPerSec/blocksPerSec,
 					height: unitHeight,
 				});
-			d3.select(this).append('text')
-				.classed('text-label', true)
-				.attr({
-					x: 0.5*minPxPerSec*ebPerSec,
-					y: 0*unitHeight+1*15,
-				})
-				.text(d);
+			// d3.select(this).append('text')
+			// 	.classed('text-label', true)
+			// 	.attr({
+			// 		x: 0.5*minPxPerSec/blocksPerSec,
+			// 		y: 0*unitHeight+1*15,
+			// 	})
+			// 	.text(d);
 		});
-	echoblocksGs
+	blocksGs
 		.attr('transform', function(d,i) {
-			var xT = i*minPxPerSec*ebPerSec;
+			var xT = i*minPxPerSec/blocksPerSec;
 			var yT = 0;
 			return 'translate('+xT+','+yT+')';
 		});
+	var secondsRoot = svg.append('g');
+	var secondsData = d3.range(numSecondBlocks*blocksPerSec);
+	var secondsLabels = secondsRoot.selectAll('text').data(secondsData);
+	secondsLabels.enter()
+		.append('text')
+			.classed('label', true)
+			.attr({
+				x: function(d) { return d*minPxPerSec; },
+				y: 0.5*20,
+			})
+			.text(function(d) {
+				if (d === 0) { return ''; }
+				return d;
+			});
 
 	d3.selectAll('.unloaded').classed('unloaded', false);
 
@@ -97,7 +111,8 @@ function Main() {
 		secondsFloat = time.toFixed(1);
 		if (secondsFloat !== oldSeconds) {
 			oldSeconds = secondsFloat;
-			d3.select('#current-time').text(secondsFloat+'s');
+			d3.select('#current-time')
+				.text(secondsFloat+'s');
 		}
 	});
 	wavesurfer.on('seek', function(progress) {
@@ -149,21 +164,25 @@ function Main() {
 					.attr({
 						width: minPxPerSec*wavesurfer.getDuration(),
 					});
-				echoblocksGs
+				blocksGs
 					.attr('transform', function(d,i) {
-						var xT = i*minPxPerSec*ebPerSec;
+						var xT = i*minPxPerSec/blocksPerSec;
 						var yT = 0;
 						return 'translate('+xT+','+yT+')';
 					})
 					.each(function(d) {
-						d3.select(this).selectAll('text')
-							.attr({
-								x: 0.5*minPxPerSec*ebPerSec,
-							});
 						d3.select(this).selectAll('rect')
 							.attr({
-								width: minPxPerSec,
+								width: minPxPerSec/blocksPerSec,
 							});
+						// d3.select(this).selectAll('text')
+						// 	.attr({
+						// 		x: 0.5*minPxPerSec/blocksPerSec,
+						// 	});
+					});
+				secondsLabels
+					.attr({
+						x: function(d) { return d*minPxPerSec; },
 					});
 			});
 		});
@@ -194,7 +213,7 @@ function Main() {
 		});
 
 	var keyPressedArray, classHistoryData = [], currentString = '';
-	var classCounter = {'0':echoblocksData.length, '1':0, '2':0};
+	var classCounter = {'0':blocksData.length, '1':0, '2':0};
 	d3.select('#class-counters')
 		.text('0:'+classCounter['0']+' 1:'+classCounter['1']+' 2:'+classCounter['2'])
 	var keyToLetter = {
@@ -211,20 +230,21 @@ function Main() {
 			if (letter === undefined) { return; }
 			letter = letter.toUpperCase();
 			var classNumber = (letterToClass[letter] !== undefined) ? letterToClass[letter] : '0';
-			var second = Math.floor(secondsFloat);
-			d3.select(echoblocksGs[0][second*ebPerSec])
+			var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+			console.log(secondsFloat, blocksIndex);
+			d3.select(blocksGs[0][blocksIndex])
 				.datum(classNumber)
 				.each(function(d) {
-					d3.select(this).selectAll('text')
-						.text(d);
 					d3.select(this).selectAll('rect')
-						.attr('class', 'echoblock-rect') // reset classes
+						.attr('class', 'block-rect') // reset classes
 						.classed('class'+d, true);
+					// d3.select(this).selectAll('text')
+					// 	.text(d);
 				});
-			echoblocksData[second*ebPerSec] = classNumber;
-			classCounter['0'] = d3.sum(echoblocksData, function(d) { return d === '0'; });
-			classCounter['1'] = d3.sum(echoblocksData, function(d) { return d === '1'; });
-			classCounter['2'] = d3.sum(echoblocksData, function(d) { return d === '2'; });
+			blocksData[blocksIndex] = classNumber;
+			classCounter['0'] = d3.sum(blocksData, function(d) { return d === '0'; });
+			classCounter['1'] = d3.sum(blocksData, function(d) { return d === '1'; });
+			classCounter['2'] = d3.sum(blocksData, function(d) { return d === '2'; });
 			d3.select('#class-counters')
 				.text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
 			d3.select('#key-pressed')
