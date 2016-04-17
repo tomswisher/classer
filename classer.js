@@ -231,7 +231,6 @@ function Main() {
 			letter = letter.toUpperCase();
 			var classNumber = (letterToClass[letter] !== undefined) ? letterToClass[letter] : '0';
 			var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-			console.log(secondsFloat, blocksIndex);
 			d3.select(blocksGs[0][blocksIndex])
 				.datum(classNumber)
 				.each(function(d) {
