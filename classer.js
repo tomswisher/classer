@@ -1,6 +1,7 @@
 'use strict';
 
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
+var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
 	wavecolor: '#000',
@@ -33,8 +34,8 @@ var wavesurfer = WaveSurfer.create({
 	// "wavecolor": "green"
 });
 wavesurfer.on('loading', function(a) {
-	d3.select('#initial-items').text('Loading at '+a+'%');
 	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
+	d3.select('#initial-items').text('Loading at '+a+'%');
 });
 wavesurfer.on('error', function(xhrError) {
 	// Occurs on error. Callback will receive (string) error message.
@@ -42,11 +43,14 @@ wavesurfer.on('error', function(xhrError) {
 });
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
+	d3.selectAll('.unloaded').classed('unloaded', false);
+	d3.select('#initial-items').remove();
+	d3.select('#song-title').text('"'+songURL+'"');
 	Main();
 });
 var songURL;
 if (sessionStorage.songURL === undefined) {
-	songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
+	songURL = defaultSongURL;
 	sessionStorage.setItem('songURL', songURL);
 } else {
 	songURL = sessionStorage.songURL;
@@ -65,11 +69,15 @@ d3.select('#song-url-form')
 		songURL = this.value;
 		sessionStorage.setItem('songURL', songURL);
 	});
+d3.select('#defaults-button')
+	.on('click', function() {
+		songURL = defaultSongURL;
+		sessionStorage.setItem('songURL', songURL);
+		d3.select('#song-url-form').node().value = songURL;
+	});
 
 function Main() {
 	startTime = new Date().getTime();
-	d3.select('#initial-items').remove();
-	d3.select('#song-title').text('"'+songURL+'"');
 	var unitHeight = wavesurfer.params.height;
 	var numSeconds = Math.ceil(wavesurfer.getDuration());
 	var wsZoomScale = d3.scale.linear()
@@ -131,8 +139,6 @@ function Main() {
 				return d;
 			});
 
-	d3.selectAll('.unloaded').classed('unloaded', false);
-
 	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
@@ -148,6 +154,7 @@ function Main() {
 		// On seeking. Callback will receive (float) progress [0..1].
 		oldTime = 0;
 		secondsFloat = Math.floor(10*progress*wavesurfer.getDuration())/10;
+		Update();
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
 		// On zooming. Callback will receive (integer) minPxPerSec.
@@ -157,11 +164,9 @@ function Main() {
 	// 	console.log('error');
 	// 	console.log(a, b, c, d, e, f);
 	// });
-	// wavesurfer.on('finish', function(a, b, c, d, e, f) {
-	// 	// When it finishes playing.
-	// 	console.log('finish');
-	// 	console.log(a, b, c, d, e, f);
-	// });
+	wavesurfer.on('finish', function() {
+		// When it finishes playing.
+	});
 	// wavesurfer.on('pause', function() {
 	// 	// When audio is paused.
 	// 	console.log('pause');
