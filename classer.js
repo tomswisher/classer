@@ -1,6 +1,6 @@
 'use strict';
 
-var blocksData;
+var exportedData, blocksData, blocksPerSec = 10;
 var songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
@@ -44,8 +44,7 @@ wavesurfer.load('audio/'+songURL);
 
 function Main() {
 	var unitHeight = wavesurfer.params.height;
-	var numSecondBlocks = Math.ceil(wavesurfer.getDuration());
-	var blocksPerSec = 10;
+	var numSeconds = Math.ceil(wavesurfer.getDuration());
 	var wsZoomScale = d3.scale.linear()
 		.domain([1,2])
 		.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
@@ -61,7 +60,7 @@ function Main() {
 				height: unitHeight,
 			});
 	var blocksRoot = svg.append('g');
-	blocksData = d3.range(numSecondBlocks*blocksPerSec)
+	blocksData = d3.range(numSeconds*blocksPerSec)
 		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
 	var blocksGs = blocksRoot.selectAll('g').data(blocksData);
 	blocksGs.enter()
@@ -90,7 +89,7 @@ function Main() {
 			return 'translate('+xT+','+yT+')';
 		});
 	var secondsRoot = svg.append('g');
-	var secondsData = d3.range(numSecondBlocks*blocksPerSec);
+	var secondsData = d3.range(numSeconds*blocksPerSec);
 	var secondsLabels = secondsRoot.selectAll('text').data(secondsData);
 	secondsLabels.enter()
 		.append('text')
@@ -111,7 +110,7 @@ function Main() {
 		// Fires continuously as the audio plays. Also fires on seeking.
 		if (time <= oldTime) { return; } // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
-		secondsFloat = time.toFixed(1);
+		secondsFloat = Math.floor(10*time)/10;
 		if (secondsFloat !== oldSecondsFloat) {
 			oldSecondsFloat = secondsFloat;
 			Update();
@@ -120,7 +119,7 @@ function Main() {
 	wavesurfer.on('seek', function(progress) {
 		// On seeking. Callback will receive (float) progress [0..1].
 		oldTime = 0;
-		secondsFloat = (progress*wavesurfer.getDuration()).toFixed(1);
+		secondsFloat = Math.floor(10*progress*wavesurfer.getDuration())/10;
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
 		// On zooming. Callback will receive (integer) minPxPerSec.
@@ -294,7 +293,16 @@ function Main() {
 	};
 
 	function ExportData() {
-		console.log(blocksData);
+		CalculateTotals();
+		exportedData = {};
+		exportedData.metadata = {
+			songURL:songURL,
+			duration:wavesurfer.getDuration(),
+			blocksPerSec:blocksPerSec,
+			classCounter:classCounter,
+		};
+		exportedData.blocksData = blocksData;
+		console.log(exportedData);
 	};
 }
 
