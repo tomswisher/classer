@@ -240,36 +240,38 @@ function Main() {
 		65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
 		// 188:',',190:'.',
 	};
-	var lastKeyDown, symbolDown;
+	var currentSymbol, keyActivated = false;
 	$(document)
 		.bind('keydown', function(event) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
-			if (event.which === lastKeyDown) { return; }
-			lastKeyDown = event.which;
-			symbolDown = keyToSymbol[event.which];
-			if (symbolDown !== undefined) {
-				symbolDown = symbolDown.toUpperCase();
+			if (keyToSymbol[event.which] === currentSymbol && keyActivated === false) { return; }
+			
+			if (keyToSymbol[event.which] !== currentSymbol) {
+				currentSymbol = keyToSymbol[event.which];
+				keyActivated = false;
+			} else if (keyToSymbol[event.which] === currentSymbol && keyActivated === true) {
+				currentSymbol = undefined;
+				keyActivated = false;
+			} else if (keyToSymbol[event.which] === currentSymbol && keyActivated === false) {
+				currentSymbol = keyToSymbol[event.which];
 			}
 			Update();
 		})
 		.bind('keyup', function(e) {
-			symbolDown = undefined;
-			lastKeyDown = undefined;
-			d3.select('#key-pressed')
-				.text('');
+			keyActivated = true;
 		});
 
 	function Update() {
 		d3.select('#current-time')
 			.text(secondsFloat+'s');
-		if (symbolDown === undefined) {
+		if (currentSymbol === undefined) {
 			d3.select('#key-pressed')
 				.text('');
 			return;
 		}
 		d3.select('#key-pressed')
-			.text(symbolDown);
-		var classNumber = (symbolToClass[symbolDown] !== undefined) ? symbolToClass[symbolDown] : '0';
+			.text(currentSymbol);
+		var classNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
 		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
 		d3.select(blocksGs[0][blocksIndex])
 			.datum(classNumber)
