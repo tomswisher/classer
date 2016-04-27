@@ -1,6 +1,6 @@
 'use strict';
 
-var exportedData, blocksData, blocksPerSec = 10;
+var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
 	wavecolor: '#000',
@@ -32,8 +32,13 @@ var wavesurfer = WaveSurfer.create({
 	// "autoCenter": true,
 	// "wavecolor": "green"
 });
-wavesurfer.on('loading', function() {
+wavesurfer.on('loading', function(a) {
+	d3.select('#initial-items').text('Loading at '+a+'%');
 	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
+});
+wavesurfer.on('error', function(xhrError) {
+	// Occurs on error. Callback will receive (string) error message.
+	d3.select('#initial-items').text('Error loading "'+songURL+'"');
 });
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
@@ -48,16 +53,23 @@ if (sessionStorage.songURL === undefined) {
 }
 d3.select('#load-wavesurfer-button')
 	.on('click', function() {
+		songURL = d3.select('#song-url-form').node().value;
+		sessionStorage.setItem('songURL', songURL);
 		wavesurfer.load('audio/'+songURL);
-		d3.select('#initial-items').remove();
+		d3.select('#initial-items').selectAll('*').remove();
+		d3.select('#initial-items').text('Loading at 0%');
 	});
 d3.select('#song-url-form')
 	.each(function() { this.value = songURL; })
 	.on('change', function() {
-		sessionStorage.setItem('songURL', this.value);
+		songURL = this.value;
+		sessionStorage.setItem('songURL', songURL);
 	});
 
 function Main() {
+	startTime = new Date().getTime();
+	d3.select('#initial-items').remove();
+	d3.select('#song-title').text('"'+songURL+'"');
 	var unitHeight = wavesurfer.params.height;
 	var numSeconds = Math.ceil(wavesurfer.getDuration());
 	var wsZoomScale = d3.scale.linear()
@@ -66,6 +78,7 @@ function Main() {
 	var zoomValue = 1.5;
 	var minPxPerSec = wsZoomScale(zoomValue);
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
+	d3.select('#zoom-level').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 
 	var waveContainer = d3.select('#waveform').select('wave');
 	var svg = waveContainer
@@ -189,8 +202,7 @@ function Main() {
 			minPxPerSec = wsZoomScale(zoomValue);
 			requestAnimationFrame(function() {
 				wavesurfer.zoom(minPxPerSec);
-				d3.select('#zoom-level')
-					.text(zoomValue);
+				d3.select('#zoom-level').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 				svg
 					.attr({
 						width: minPxPerSec*wavesurfer.getDuration(),
@@ -275,15 +287,12 @@ function Main() {
 		});
 
 	function Update() {
-		d3.select('#current-time')
-			.text(secondsFloat+'s');
+		d3.select('#current-time').text(secondsFloat+'s');
 		if (currentSymbol === undefined) {
-			d3.select('#key-pressed')
-				.text('');
+			d3.select('#key-pressed').text('');
 			return;
 		}
-		d3.select('#key-pressed')
-			.text(currentSymbol);
+		d3.select('#key-pressed').text(currentSymbol);
 		var classNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
 		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
 		d3.select(blocksGs[0][blocksIndex])
@@ -292,8 +301,7 @@ function Main() {
 				d3.select(this).selectAll('rect')
 					.attr('class', 'block-rect') // reset classes
 					.classed('class'+d, true);
-				// d3.select(this).selectAll('text')
-				// 	.text(d);
+				// d3.select(this).selectAll('text').text(d);
 			});
 		blocksData[blocksIndex].class = classNumber;
 	};
@@ -307,13 +315,17 @@ function Main() {
 	};
 
 	function ExportData() {
+		exportTime = new Date().getTime();
 		CalculateTotals();
 		exportedData = {};
 		exportedData.metadata = {
 			songURL:songURL,
-			duration:wavesurfer.getDuration(),
+			songDuration:wavesurfer.getDuration(),
 			blocksPerSec:blocksPerSec,
 			classCounter:classCounter,
+			startTime:startTime,
+			exportTime:exportTime,
+			elapsedSec:(exportTime-startTime)/1000,
 		};
 		exportedData.blocksData = blocksData;
 		console.log(exportedData);
