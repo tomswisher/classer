@@ -13,25 +13,24 @@
 <br>
 <div id='wavesurfer-container' class='unloaded'>
 	<div id='waveform'></div>
-	<div id='buttons-container'>
-		<div class='inline'><button id='play-pause-button'>Play</button></div>
+	<br>
+	<div>Zoom Level: <div class='inline' id='zoom-level'>1.5</div></div>
+	<div><input id='zoom-slider' type='range' min='1' max='10' step='0.1' value='1.5' style='width:100%' /></div>
+	<br>
+	<div>
+		<div class='inline'><button class='med-button' id='play-pause-button'>Play Track</button></div>
+		<div class='inline'><button class='med-button' id='calculate-totals-button'>Calculate Totals</button></div>
+		<div class='inline'><button class='med-button' id='export-data-button'>Export Data</button></div>
 		<!-- <div class='inline'><button id='-button'></button></div> -->
 		<!-- <div class='inline'><button id='-button'></button></div> -->
 	</div>
-	<div id='dashboard-container'>
-		<div>Current Time: <div class='inline' id='current-time'>0.0s</div></div>
-		<br>
-		<div>Zoom Level: <div class='inline' id='zoom-level'>1</div></div>
-		<div><input id='zoom-slider' type='range' min='1' max='10' step='0.1' value='1' style='width: 100%' /></div>
-		<br>
-		<div>Class Counters: <div class='inline' id='class-counters'></div></div>
-		<br>
-		<div>Key Pressed: <div class='inline' id='key-pressed'></div></div>
-		<br>
-		<!-- <div>Current String: <div class='inline' id='current-string'></div></div>
-		<br> -->
-		<div>Class History: <div class='wrap' id='class-history'>[]</div></div>
-	</div>
+	<br>
+	<div>Current Time: <div class='inline' id='current-time'>0.0s</div></div>
+	<br>
+	<div>Key Pressed: <div class='inline' id='key-pressed'></div></div>
+	<br>
+	<div>Class Counters: <div class='inline' id='class-counters'></div></div>
+	<br>
 </div>
 
 </body>

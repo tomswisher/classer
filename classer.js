@@ -1,5 +1,6 @@
 'use strict';
 
+var blocksData;
 var songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
@@ -43,13 +44,14 @@ wavesurfer.load('audio/'+songURL);
 
 function Main() {
 	var unitHeight = wavesurfer.params.height;
-	var minPxPerSec = wavesurfer.drawer.params.minPxPerSec;
+	var numSecondBlocks = Math.ceil(wavesurfer.getDuration());
 	var blocksPerSec = 10;
-	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 	var wsZoomScale = d3.scale.linear()
 		.domain([1,2])
-		.range([minPxPerSec, 2*minPxPerSec]);
-	var numSecondBlocks = Math.ceil(wavesurfer.getDuration());
+		.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
+	var zoomValue = 1.5;
+	var minPxPerSec = wsZoomScale(zoomValue);
+	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 
 	var waveContainer = d3.select('#waveform').select('wave');
 	var svg = waveContainer
@@ -59,13 +61,14 @@ function Main() {
 				height: unitHeight,
 			});
 	var blocksRoot = svg.append('g');
-	var blocksData = d3.range(numSecondBlocks*blocksPerSec).map(function() { return '0'; });
+	blocksData = d3.range(numSecondBlocks*blocksPerSec)
+		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
 	var blocksGs = blocksRoot.selectAll('g').data(blocksData);
 	blocksGs.enter()
 		.append('g').each(function(d) {
 			d3.select(this).append('rect')
 				.classed('block-rect', true)
-				.classed('class'+d, true)
+				.classed('class'+d.class, true)
 				.attr({
 					x: 0,
 					y: 0,
@@ -103,20 +106,20 @@ function Main() {
 
 	d3.selectAll('.unloaded').classed('unloaded', false);
 
-	var oldTime = 0, oldSeconds = 0, secondsFloat = 0;
+	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
 		if (time <= oldTime) { return; } // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
 		secondsFloat = time.toFixed(1);
-		if (secondsFloat !== oldSeconds) {
-			oldSeconds = secondsFloat;
-			d3.select('#current-time')
-				.text(secondsFloat+'s');
+		if (secondsFloat !== oldSecondsFloat) {
+			oldSecondsFloat = secondsFloat;
+			Update();
 		}
 	});
 	wavesurfer.on('seek', function(progress) {
 		// On seeking. Callback will receive (float) progress [0..1].
+		oldTime = 0;
 		secondsFloat = (progress*wavesurfer.getDuration()).toFixed(1);
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
@@ -150,11 +153,26 @@ function Main() {
 	d3.select('#play-pause-button')
 		.on('click', function() {
 			wavesurfer.playPause();
+			if (wavesurfer.backend.isPaused() === true) {
+				this.textContent = 'Play Track';
+			} else {
+				this.textContent = 'Pause Track';
+			}
+		});
+
+	d3.select('#calculate-totals-button')
+		.on('click', function() {
+			CalculateTotals();
+		});
+
+	d3.select('#export-data-button')
+		.on('click', function() {
+			ExportData();
 		});
 
 	d3.select('#zoom-slider')
 		.on('change', function() {
-			var zoomValue = Number(this.value);
+			zoomValue = Number(this.value);
 			minPxPerSec = wsZoomScale(zoomValue);
 			requestAnimationFrame(function() {
 				wavesurfer.zoom(minPxPerSec);
@@ -189,79 +207,93 @@ function Main() {
 
 	var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 	var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
-	var letterToClass = {};
+	var symbolToClass = {};
 	d3.selectAll('#class1-form').datum({class:'1'});
 	d3.selectAll('#class2-form').datum({class:'2'});
 	d3.selectAll('#class1-form, #class2-form')
 		.each(function(d) {
 			this.value = this.value.toUpperCase();
 			d.value = this.value;
-			letterToClass[d.value] = d.class;
+			symbolToClass[d.value] = d.class;
 		})
 		.on('keyup', function(d) {
 			this.value = this.value.toUpperCase();
 			if (letterArray.indexOf(this.value) === -1 && numberArray.indexOf(this.value) === -1) {
 				this.value = d.value;
 			} else {
-				delete(letterToClass[d.value]);
+				delete(symbolToClass[d.value]);
 				d.value = this.value;
-				letterToClass[d.value] = d.class;
+				symbolToClass[d.value] = d.class;
 			}
 		})
 		.on('change', function(d) {
 			this.value = this.value.toUpperCase();
 		});
 
-	var keyPressedArray, classHistoryData = [], currentString = '';
+	var classHistoryData = [], currentString = '';
 	var classCounter = {'0':blocksData.length, '1':0, '2':0};
 	d3.select('#class-counters')
 		.text('0:'+classCounter['0']+' 1:'+classCounter['1']+' 2:'+classCounter['2'])
-	var keyToLetter = {
+	var keyToSymbol = {
 		// 32:' ',
 		48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
 		65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
 		// 188:',',190:'.',
 	};
-	var lastKeyDown = undefined;
+	var lastKeyDown, symbolDown;
 	$(document)
-		.bind('keydown', function(e) {
+		.bind('keydown', function(event) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
-			var letter = keyToLetter[e.which];
-			if (letter === undefined) { return; }
-			letter = letter.toUpperCase();
-			var classNumber = (letterToClass[letter] !== undefined) ? letterToClass[letter] : '0';
-			var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-			d3.select(blocksGs[0][blocksIndex])
-				.datum(classNumber)
-				.each(function(d) {
-					d3.select(this).selectAll('rect')
-						.attr('class', 'block-rect') // reset classes
-						.classed('class'+d, true);
-					// d3.select(this).selectAll('text')
-					// 	.text(d);
-				});
-			blocksData[blocksIndex] = classNumber;
-			classCounter['0'] = d3.sum(blocksData, function(d) { return d === '0'; });
-			classCounter['1'] = d3.sum(blocksData, function(d) { return d === '1'; });
-			classCounter['2'] = d3.sum(blocksData, function(d) { return d === '2'; });
-			d3.select('#class-counters')
-				.text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
-			d3.select('#key-pressed')
-				.text(letter);
-			if (e.which === lastKeyDown) { return; }
-			lastKeyDown = e.which;
-			// currentString += letter;
-		 //    d3.select('#current-string')
-		 //    	.text(currentString);
-			classHistoryData.push(classNumber);
-			d3.select('#class-history')
-				.text('['+classHistoryData+']');
+			if (event.which === lastKeyDown) { return; }
+			lastKeyDown = event.which;
+			symbolDown = keyToSymbol[event.which];
+			if (symbolDown !== undefined) {
+				symbolDown = symbolDown.toUpperCase();
+			}
+			Update();
 		})
 		.bind('keyup', function(e) {
-			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
+			symbolDown = undefined;
+			lastKeyDown = undefined;
 			d3.select('#key-pressed')
 				.text('');
 		});
+
+	function Update() {
+		d3.select('#current-time')
+			.text(secondsFloat+'s');
+		if (symbolDown === undefined) {
+			d3.select('#key-pressed')
+				.text('');
+			return;
+		}
+		d3.select('#key-pressed')
+			.text(symbolDown);
+		var classNumber = (symbolToClass[symbolDown] !== undefined) ? symbolToClass[symbolDown] : '0';
+		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+		d3.select(blocksGs[0][blocksIndex])
+			.datum(classNumber)
+			.each(function(d) {
+				d3.select(this).selectAll('rect')
+					.attr('class', 'block-rect') // reset classes
+					.classed('class'+d, true);
+				// d3.select(this).selectAll('text')
+				// 	.text(d);
+			});
+		blocksData[blocksIndex].class = classNumber;
+	};
+
+	function CalculateTotals() {
+		classCounter['0'] = d3.sum(blocksData, function(d) { return d.class === '0'; });
+		classCounter['1'] = d3.sum(blocksData, function(d) { return d.class === '1'; });
+		classCounter['2'] = d3.sum(blocksData, function(d) { return d.class === '2'; });
+		d3.select('#class-counters')
+			.text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
+	};
+
+	function ExportData() {
+		console.log(blocksData);
+	};
 }
 
 /*

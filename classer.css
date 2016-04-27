@@ -19,6 +19,9 @@ body {
 	dominant-baseline: middle;
 	text-anchor: middle;
 }
+button.med-button {
+	width: 100px;
+}
 text.label {
 	stroke: black;
 	stroke-width: 1px;
