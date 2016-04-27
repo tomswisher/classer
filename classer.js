@@ -1,7 +1,6 @@
 'use strict';
 
 var exportedData, blocksData, blocksPerSec = 10;
-var songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
 	wavecolor: '#000',
@@ -40,7 +39,23 @@ wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	Main();
 });
-wavesurfer.load('audio/'+songURL);
+var songURL;
+if (sessionStorage.songURL === undefined) {
+	songURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
+	sessionStorage.setItem('songURL', songURL);
+} else {
+	songURL = sessionStorage.songURL;
+}
+d3.select('#load-wavesurfer-button')
+	.on('click', function() {
+		wavesurfer.load('audio/'+songURL);
+		d3.select('#initial-items').remove();
+	});
+d3.select('#song-url-form')
+	.each(function() { this.value = songURL; })
+	.on('change', function() {
+		sessionStorage.setItem('songURL', this.value);
+	});
 
 function Main() {
 	var unitHeight = wavesurfer.params.height;
@@ -147,7 +162,6 @@ function Main() {
 	// 	console.log('scroll');
 	// 	console.log(scrollEvent);
 	// });
-
 
 	d3.select('#play-pause-button')
 		.on('click', function() {
