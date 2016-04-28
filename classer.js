@@ -39,13 +39,13 @@ wavesurfer.on('loading', function(a) {
 });
 wavesurfer.on('error', function(xhrError) {
 	// Occurs on error. Callback will receive (string) error message.
-	d3.select('#initial-items').text('Error loading "'+songURL+'"');
+	d3.select('#initial-items').text('Error loading '+songURL);
 });
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	d3.selectAll('.unloaded').classed('unloaded', false);
 	d3.select('#initial-items').remove();
-	d3.select('#song-title').text('"'+songURL+'"');
+	d3.select('#song-title').text(songURL);
 	Main();
 });
 var songURL;
@@ -86,7 +86,7 @@ function Main() {
 	var zoomValue = 1.5;
 	var minPxPerSec = wsZoomScale(zoomValue);
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
-	d3.select('#zoom-level').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
+	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 
 	var waveContainer = d3.select('#waveform').select('wave');
 	var svg = waveContainer
@@ -196,38 +196,47 @@ function Main() {
 			ExportData();
 		});
 
+    var speed = 1.0;
+    d3.select('#speed-slider')
+        .on('change', function() {
+            speed = this.value;
+            d3.select('#speed-value').text(parseFloat(speed).toFixed(1));
+            wavesurfer.setPlaybackRate(speed);
+            Update();
+        });
+
 	d3.select('#zoom-slider')
 		.on('change', function() {
+            Update();
 			zoomValue = Number(this.value);
 			minPxPerSec = wsZoomScale(zoomValue);
-			requestAnimationFrame(function() {
-				wavesurfer.zoom(minPxPerSec);
-				d3.select('#zoom-level').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
-				svg
-					.attr({
-						width: minPxPerSec*wavesurfer.getDuration(),
-					});
-				blocksGs
-					.attr('transform', function(d,i) {
-						var xT = i*minPxPerSec/blocksPerSec;
-						var yT = 0;
-						return 'translate('+xT+','+yT+')';
-					})
-					.each(function(d) {
-						d3.select(this).selectAll('rect')
-							.attr({
-								width: minPxPerSec/blocksPerSec,
-							});
-						// d3.select(this).selectAll('text')
-						// 	.attr({
-						// 		x: 0.5*minPxPerSec/blocksPerSec,
-						// 	});
-					});
-				secondsLabels
-					.attr({
-						x: function(d) { return d*minPxPerSec; },
-					});
-			});
+			wavesurfer.zoom(minPxPerSec);
+			d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
+			svg
+				.attr({
+					width: minPxPerSec*wavesurfer.getDuration(),
+				});
+			blocksGs
+				.attr('transform', function(d,i) {
+					var xT = i*minPxPerSec/blocksPerSec;
+					var yT = 0;
+					return 'translate('+xT+','+yT+')';
+				})
+				.each(function(d) {
+					d3.select(this).selectAll('rect')
+						.attr({
+							width: minPxPerSec/blocksPerSec,
+						});
+					// d3.select(this).selectAll('text')
+					// 	.attr({
+					// 		x: 0.5*minPxPerSec/blocksPerSec,
+					// 	});
+				});
+			secondsLabels
+				.attr({
+					x: function(d) { return d*minPxPerSec; },
+				});
+            Update();
 		});
 
 	var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
