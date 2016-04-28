@@ -191,11 +191,6 @@ function Main() {
 			}
 		});
 
-	d3.select('#calculate-totals-button')
-		.on('click', function() {
-			CalculateTotals();
-		});
-
 	d3.select('#export-data-button')
 		.on('click', function() {
 			ExportData();
@@ -292,36 +287,32 @@ function Main() {
 		});
 
 	function Update() {
-		d3.select('#current-time').text(secondsFloat+'s');
+		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('');
 			return;
 		}
 		d3.select('#key-pressed').text(currentSymbol);
-		var classNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+        var oldClassNumber = d3.select(blocksGs[0][blocksIndex]).selectAll('rect').datum().class;
+		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+        blocksData[blocksIndex].class = newClassNumber;
 		d3.select(blocksGs[0][blocksIndex])
-			.datum(classNumber)
+			.datum(newClassNumber)
 			.each(function(d) {
 				d3.select(this).selectAll('rect')
 					.attr('class', 'block-rect') // reset classes
 					.classed('class'+d, true);
 				// d3.select(this).selectAll('text').text(d);
 			});
-		blocksData[blocksIndex].class = classNumber;
-	};
-
-	function CalculateTotals() {
-		classCounter['0'] = d3.sum(blocksData, function(d) { return d.class === '0'; });
-		classCounter['1'] = d3.sum(blocksData, function(d) { return d.class === '1'; });
-		classCounter['2'] = d3.sum(blocksData, function(d) { return d.class === '2'; });
-		d3.select('#class-counters')
-			.text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
+        classCounter[oldClassNumber] -= 1;
+        classCounter[newClassNumber] += 1;
+        d3.select('#class-counters')
+            .text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
 	};
 
 	function ExportData() {
 		exportTime = new Date().getTime();
-		CalculateTotals();
 		exportedData = {};
 		exportedData.metadata = {
 			songURL:songURL,
@@ -334,6 +325,16 @@ function Main() {
 		};
 		exportedData.blocksData = blocksData;
 		console.log(exportedData);
+		$.ajax({
+			type: 'POST',
+			url: 'exportedData',
+			data: JSON.stringify(exportedData),
+            async: false,
+			success: function() {
+                console.log('success');
+            },
+			dataType: 'json',
+		});
 	};
 }
 
