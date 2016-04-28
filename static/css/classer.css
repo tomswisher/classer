@@ -1,0 +1,51 @@
+body {
+	font-size: 20px;
+	font-family: "Courier New", Courier, monospace;
+}
+.inline {
+	display: inline-block;
+}
+.wrap {
+	word-wrap: break-word;
+}
+.unloaded {
+	visibility: hidden;
+}
+.scrolls {
+	overflow-x: scroll;
+}
+.label {
+	font-size: 15px;
+	dominant-baseline: middle;
+	text-anchor: middle;
+}
+button.med-button {
+	width: 100px;
+}
+text.label {
+	stroke: black;
+	stroke-width: 1px;
+}
+.block-rect {
+	// stroke: white;
+	// stroke-width: 1px;
+	opacity: 0.6;
+}
+#class1-form, #class2-form {
+	text-transform: uppercase;
+}
+rect.class0 {
+	fill: white;
+}
+div.class1 {
+	color: blue;
+}
+rect.class1 {
+	fill: blue;
+}
+div.class2 {
+	color: orange;
+}
+rect.class2 {
+	fill: orange;
+}

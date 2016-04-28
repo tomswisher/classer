@@ -1,0 +1,53 @@
+<html>
+<head>
+<meta charset='UTF-8' />
+<title>Classer</title>
+<link rel='stylesheet' type='text/css' href='../../static/css/classer.css'></link>
+</head>
+<body>
+<br>
+<div id='initial-items'>
+	<div class='inline'><button class='med-button' id='load-wavesurfer-button'>Load Song</button></div>
+	<div class='inline'><input type='form' id='song-url-form' size='50' value=''></input></div>
+	<div class='inline'><button class='med-button' id='defaults-button'>Defaults</button></div>
+</div>
+<div id='song-title' class='unloaded'></div>
+<br>
+<div id='wavesurfer-container' class='unloaded'>
+	<div id='waveform'></div>
+	<br>
+	<div>Zoom Level: <div class='inline' id='zoom-value'>1.5</div></div>
+	<div><input id='zoom-slider' type='range' min='1' max='7' step='0.1' value='1.5' style='width:100%' /></div>
+	<br>
+	<div>Playback Speed: <div class='inline' id='speed-value'>1.0</div></div>
+	<div><input id='speed-slider' type='range' min='0.5' max='2' step='0.1' value='1' style='width:100%' /></div>
+	<br>
+	<div>
+		<div class='inline'><button class='med-button' id='play-pause-button'>Play Track</button></div>
+		<div class='inline'><button class='med-button' id='export-data-button'>Export Data</button></div>
+		<!-- <div class='inline'><button id='-button'></button></div> -->
+		<!-- <div class='inline'><button id='-button'></button></div> -->
+	</div>
+	<br>
+	<div>Current Time: <div class='inline' id='current-time'>0.0s</div></div>
+	<br>
+	<div>Key Pressed: <div class='inline' id='key-pressed'></div></div>
+</div>
+<br>
+<div id='classer-settings' class='unloaded'>
+	<div class='settings'>
+		<div class='class1 inline'>Class 1</div> is letter: <input type='form' id='class1-form' size='1' maxlength='1' value='A'></input>
+	</div>
+	<div class='settings'>
+		<div class='class2 inline'>Class 2</div> is letter: <input type='form' id='class2-form' size='1' maxlength='1' value='S'></input>
+	</div>
+	<br>
+	<div>Class Counters: <div class='inline' id='class-counters'></div></div>
+</div>
+
+</body>
+<script type='text/javascript' src='../static/js/d3.v3.min.js'></script>
+<script type='text/javascript' src='../static/js/jquery.min.js'></script>
+<script type='text/javascript' src='../static/js/wavesurfer.min.js'></script>
+<script type='text/javascript' src='../static/js/classer.js'></script>
+</html>
