@@ -1,7 +1,16 @@
 'use strict';
 
-var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
 var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
+var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
+var symbolToClass = {}, currentSymbol, keyActivated;
+var keyToSymbol = {
+	// 32:' ',
+	48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
+	65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
+	// 188:',',190:'.',
+};
+var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
 var wavesurfer = WaveSurfer.create({
 	container: '#waveform',
 	wavecolor: '#000',
@@ -182,7 +191,7 @@ function Main() {
 	// });
 
 	d3.select('#play-pause-button')
-		.on('click', function() {
+		.on('mousedown', function() {
 			wavesurfer.playPause();
 			if (wavesurfer.backend.isPaused() === true) {
 				this.textContent = 'Play Track';
@@ -196,12 +205,12 @@ function Main() {
 			ExportData();
 		});
 
-    var speed = 1.0;
+    var playbackSpeed = 1.0;
     d3.select('#speed-slider')
         .on('change', function() {
-            speed = this.value;
-            d3.select('#speed-value').text(parseFloat(speed).toFixed(1));
-            wavesurfer.setPlaybackRate(speed);
+            playbackSpeed = this.value;
+            d3.select('#playbackSpeed-value').text(parseFloat(playbackSpeed).toFixed(1));
+            wavesurfer.setPlaybackRate(playbackSpeed);
             Update();
         });
 
@@ -239,55 +248,44 @@ function Main() {
             Update();
 		});
 
-	var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
-	var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
-	var symbolToClass = {};
-	d3.selectAll('#class1-form').datum({class:'1'});
-	d3.selectAll('#class2-form').datum({class:'2'});
-	d3.selectAll('#class1-form, #class2-form')
+	symbolToClass = {};
+	d3.selectAll('#class1-label, #class1-submit').datum({class:'1'});
+	d3.selectAll('#class2-label, #class2-submit').datum({class:'2'});
+	d3.selectAll('#class1-label, #class2-label')
 		.each(function(d) {
-			this.value = this.value.toUpperCase();
-			d.value = this.value;
-			symbolToClass[d.value] = d.class;
-		})
-		.on('keyup', function(d) {
-			this.value = this.value.toUpperCase();
-			if (letterArray.indexOf(this.value) === -1 && numberArray.indexOf(this.value) === -1) {
-				this.value = d.value;
-			} else {
-				delete(symbolToClass[d.value]);
-				d.value = this.value;
-				symbolToClass[d.value] = d.class;
+			symbolToClass[this.textContent] = d.class;
+		});
+	d3.selectAll('#class1-submit, #class2-submit')
+		.on('click', function(d) {
+			var oldValue = d3.select('#class'+d.class+'-label').text();
+			var newValue = d3.select('#class'+d.class+'-form').node().value.toUpperCase();
+			d3.select('#class'+d.class+'-form').node().value = '';
+			console.log(oldValue, newValue);
+			if (letterArray.indexOf(newValue) !== -1 || numberArray.indexOf(newValue) !== -1) {
+				delete(symbolToClass[oldValue]);
+				symbolToClass[newValue] = d.class;
+				d3.select('#class'+d.class+'-label').text(newValue);
 			}
-		})
-		.on('change', function(d) {
-			this.value = this.value.toUpperCase();
 		});
 
 	var classHistoryData = [], currentString = '';
-	var classCounter = {'0':blocksData.length, '1':0, '2':0};
+	var classCounters = {'0':blocksData.length, '1':0, '2':0};
 	d3.select('#class-counters')
-		.text('0:'+classCounter['0']+' 1:'+classCounter['1']+' 2:'+classCounter['2'])
-	var keyToSymbol = {
-		// 32:' ',
-		48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
-		65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
-		// 188:',',190:'.',
-	};
-	var currentSymbol, keyActivated = false;
+		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
+	keyActivated = false;
 	$(document)
 		.bind('keydown', function(event) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
-			if (keyToSymbol[event.which] === currentSymbol && keyActivated === false) { return; }
-			
-			if (keyToSymbol[event.which] !== currentSymbol) {
-				currentSymbol = keyToSymbol[event.which];
+			var newSymbol = keyToSymbol[event.which];
+			if (newSymbol === currentSymbol && keyActivated === false) { return; }
+			if (newSymbol !== currentSymbol) {
+				currentSymbol = newSymbol;
 				keyActivated = false;
-			} else if (keyToSymbol[event.which] === currentSymbol && keyActivated === true) {
+			} else if (newSymbol === currentSymbol && keyActivated === true) {
 				currentSymbol = undefined;
 				keyActivated = false;
-			} else if (keyToSymbol[event.which] === currentSymbol && keyActivated === false) {
-				currentSymbol = keyToSymbol[event.which];
+			} else if (newSymbol === currentSymbol && keyActivated === false) {
+				currentSymbol = newSymbol;
 			}
 			Update();
 		})
@@ -303,7 +301,7 @@ function Main() {
 		}
 		d3.select('#key-pressed').text(currentSymbol);
         var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-        var oldClassNumber = d3.select(blocksGs[0][blocksIndex]).selectAll('rect').datum().class;
+        var oldClassNumber = d3.select(blocksGs[0][blocksIndex]).selectAll('rect').datum()['class'];
 		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
         blocksData[blocksIndex].class = newClassNumber;
 		d3.select(blocksGs[0][blocksIndex])
@@ -314,10 +312,10 @@ function Main() {
 					.classed('class'+d, true);
 				// d3.select(this).selectAll('text').text(d);
 			});
-        classCounter[oldClassNumber] -= 1;
-        classCounter[newClassNumber] += 1;
+        classCounters[oldClassNumber] -= 1;
+        classCounters[newClassNumber] += 1;
         d3.select('#class-counters')
-            .text('0:'+classCounter['0']+'\t1:'+classCounter['1']+'\t2:'+classCounter['2'])
+            .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
 	};
 
 	function ExportData() {
@@ -325,12 +323,17 @@ function Main() {
 		exportedData = {};
 		exportedData.metadata = {
 			songURL:songURL,
-			songDuration:wavesurfer.getDuration(),
+			songDurationSec:wavesurfer.getDuration(),
 			blocksPerSec:blocksPerSec,
-			classCounter:classCounter,
+			classCounters:classCounters,
 			startTime:startTime,
 			exportTime:exportTime,
 			elapsedSec:(exportTime-startTime)/1000,
+			class1Key:d3.select('#class1-label').text(),
+			class2Key:d3.select('#class2-label').text(),
+			zoomValue:zoomValue,
+			playbackSpeed:playbackSpeed,
+
 		};
 		exportedData.blocksData = blocksData;
 		console.log(exportedData);
