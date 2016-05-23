@@ -49,3 +49,8 @@ div.class2 {
 rect.class2 {
 	fill: orange;
 }
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}

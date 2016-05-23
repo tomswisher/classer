@@ -101,21 +101,19 @@ function Main() {
 	var svg = waveContainer.append('svg')
 		.attr('width', minPxPerSec*wavesurfer.getDuration())
 		.attr('height', waveformHeight);
-	var blocksRoot = svg.append('g');
+	var blocksRoot = svg.append('g').attr('class', 'blocks-root');
 	blocksData = d3.range(numSeconds*blocksPerSec)
 		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
 	var blocksGs = blocksRoot.selectAll('g').data(blocksData);
-	blocksGs.enter()
-		.append('g').each(function(d) {
+	blocksGs.enter().append('g').attr('class', 'block-g')
+		.each(function(d) {
 			d3.select(this).append('rect')
 				.classed('block-rect', true)
 				.classed('class'+d.class, true)
-				.attr({
-					x: 0,
-					y: 0,
-					width: minPxPerSec/blocksPerSec,
-					height: unitHeight,
-				});
+				.attr('x', 0)
+				.attr('y', 0)
+				.attr('width', minPxPerSec/blocksPerSec)
+				.attr('height', unitHeight);
 			// d3.select(this).append('text')
 			// 	.classed('text-label', true)
 			// 	.attr({
@@ -145,6 +143,25 @@ function Main() {
 				if (d === 0) { return ''; }
 				return d;
 			});
+
+	var xScale = d3.scale.linear()
+		.domain([0, wavesurfer.getDuration()])
+		.range([0, minPxPerSec*wavesurfer.getDuration()]);
+
+	// ToDo: move brush above wavesurfer elements to register mouse events
+	var brush = d3.svg.brush()
+		.x(xScale)
+		.on('brush', brushed);
+	blocksRoot.append('g')
+		.attr('class', 'brush')
+		.call(brush)
+		.selectAll('rect')
+			.attr('y', 0)
+			.attr('height', wavesurferOpts.height);
+
+	function brushed() {
+		console.log(brush.extent());
+	};
 
 	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
