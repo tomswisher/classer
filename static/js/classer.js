@@ -83,6 +83,9 @@ d3.select('#defaults-button')
 	});
 
 function Main() {
+	var waveformHeight = wavesurferOpts.height+50;
+	d3.select('wave').style('height', waveformHeight);
+
 	startTime = new Date().getTime();
 	var unitHeight = wavesurfer.params.height;
 	var numSeconds = Math.ceil(wavesurfer.getDuration());
@@ -95,12 +98,9 @@ function Main() {
 	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 
 	var waveContainer = d3.select('#waveform').select('wave');
-	var svg = waveContainer
-		.append('svg')
-			.attr({
-				width: minPxPerSec*wavesurfer.getDuration(),
-				height: unitHeight,
-			});
+	var svg = waveContainer.append('svg')
+		.attr('width', minPxPerSec*wavesurfer.getDuration())
+		.attr('height', waveformHeight);
 	var blocksRoot = svg.append('g');
 	blocksData = d3.range(numSeconds*blocksPerSec)
 		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
@@ -130,7 +130,8 @@ function Main() {
 			var yT = 0;
 			return 'translate('+xT+','+yT+')';
 		});
-	var secondsRoot = svg.append('g');
+	var secondsRoot = svg.append('g')
+		.attr('transform', 'translate(0,'+(waveformHeight-40)+')');
 	var secondsData = d3.range(numSeconds*blocksPerSec);
 	var secondsLabels = secondsRoot.selectAll('text').data(secondsData);
 	secondsLabels.enter()
