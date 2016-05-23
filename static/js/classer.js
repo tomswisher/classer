@@ -11,37 +11,34 @@ var keyToSymbol = {
 };
 var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
-var wavesurfer = WaveSurfer.create({
+var wavesurferOpts = {
+	height: 128,
+	waveColor: "black",
+	progressColor: "#999",
+	cursorColor: "#333",
+	cursorWidth: 1,
+	skipLength: 2,
+	minPxPerSec: 20,
+	pixelRatio: window.devicePixelRatio,
+	fillParent: !0,
+	scrollParent: !1,
+	hideScrollbar: !1,
+	normalize: !1,
+	audioContext: null,
 	container: '#waveform',
-	wavecolor: '#000',
-	progressColor: 'green',
-	// "height": 128,
-	// "waveColor": "#999",
-	// "progressColor": "blue",
-	// "cursorColor": "#333",
-	// "cursorWidth": 1,
-	// "skipLength": 2,
-	// "minPxPerSec": 20,
-	// "pixelRatio": 1,
-	// "fillParent": true,
-	// "scrollParent": false,
-	// "hideScrollbar": false,
-	// "normalize": false,
-	// "audioContext": null,
-	// "container": "#waveform",
-	// "dragSelection": true,
-	// "loopSelection": true,
-	// "audioRate": 1,
-	// "interact": true,
-	// "splitChannels": false,
-	// "mediaContainer": null,
-	// "mediaControls": false,
-	// "renderer": "Canvas",
-	// "backend": "WebAudio",
-	// "mediaType": "audio",
-	// "autoCenter": true,
-	// "wavecolor": "green"
-});
+	dragSelection: !0,
+	loopSelection: !0,
+	audioRate: 1,
+	interact: !0,
+	splitChannels: !1,
+	mediaContainer: null,
+	mediaControls: !1,
+	renderer: "Canvas",
+	backend: "WebAudio",
+	mediaType: "audio",
+	autoCenter: !0,
+}
+var wavesurfer = WaveSurfer.create(wavesurferOpts);
 wavesurfer.on('loading', function(a) {
 	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
 	d3.select('#initial-items').text('Loading at '+a+'%');
@@ -151,19 +148,20 @@ function Main() {
 	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
+		var backup_oldTime = oldTime;
 		if (time <= oldTime) { return; } // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
 		secondsFloat = Math.floor(10*time)/10;
 		if (secondsFloat !== oldSecondsFloat) {
 			oldSecondsFloat = secondsFloat;
-			Update();
+			Update('audioprocess');
 		}
 	});
 	wavesurfer.on('seek', function(progress) {
 		// On seeking. Callback will receive (float) progress [0..1].
-		oldTime = 0;
-		secondsFloat = Math.floor(10*progress*wavesurfer.getDuration())/10;
-		Update();
+		oldTime = progress*wavesurfer.getDuration();
+		secondsFloat = Math.floor(10*oldTime)/10;
+		Update('seek');
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
 		// On zooming. Callback will receive (integer) minPxPerSec.
@@ -211,12 +209,12 @@ function Main() {
             playbackSpeed = this.value;
             d3.select('#playbackSpeed-value').text(parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
-            Update();
+            Update('speed-slider');
         });
 
 	d3.select('#zoom-slider')
 		.on('change', function() {
-            Update();
+            Update('zoom-sliderStart');
 			zoomValue = Number(this.value);
 			minPxPerSec = wsZoomScale(zoomValue);
 			wavesurfer.zoom(minPxPerSec);
@@ -245,7 +243,7 @@ function Main() {
 				.attr({
 					x: function(d) { return d*minPxPerSec; },
 				});
-            Update();
+            Update('zoom-sliderEnd');
 		});
 
 	symbolToClass = {};
@@ -260,7 +258,6 @@ function Main() {
 			var oldValue = d3.select('#class'+d.class+'-label').text();
 			var newValue = d3.select('#class'+d.class+'-form').node().value.toUpperCase();
 			d3.select('#class'+d.class+'-form').node().value = '';
-			console.log(oldValue, newValue);
 			if (letterArray.indexOf(newValue) !== -1 || numberArray.indexOf(newValue) !== -1) {
 				delete(symbolToClass[oldValue]);
 				symbolToClass[newValue] = d.class;
@@ -287,13 +284,13 @@ function Main() {
 			} else if (newSymbol === currentSymbol && keyActivated === false) {
 				currentSymbol = newSymbol;
 			}
-			Update();
+			Update('keydown');
 		})
 		.bind('keyup', function(e) {
 			keyActivated = true;
 		});
 
-	function Update() {
+	function Update(source) {
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('');
@@ -312,6 +309,7 @@ function Main() {
 					.classed('class'+d, true);
 				// d3.select(this).selectAll('text').text(d);
 			});
+		// console.log(secondsFloat+'\t'+source);
         classCounters[oldClassNumber] -= 1;
         classCounters[newClassNumber] += 1;
         d3.select('#class-counters')
@@ -408,4 +406,32 @@ wavesurfer.on('seek', function() {
 wavesurfer.on('zoom', function() {
 	// – On zooming. Callback will receive (integer) minPxPerSec.
 });
+
+wavesurferOpts = {
+    height: 128,
+    waveColor: "#999",
+    progressColor: "#555",
+    cursorColor: "#333",
+    cursorWidth: 1,
+    skipLength: 2,
+    minPxPerSec: 20,
+    pixelRatio: window.devicePixelRatio,
+    fillParent: !0,
+    scrollParent: !1,
+    hideScrollbar: !1,
+    normalize: !1,
+    audioContext: null ,
+    container: null ,
+    dragSelection: !0,
+    loopSelection: !0,
+    audioRate: 1,
+    interact: !0,
+    splitChannels: !1,
+    mediaContainer: null ,
+    mediaControls: !1,
+    renderer: "Canvas",
+    backend: "WebAudio",
+    mediaType: "audio",
+    autoCenter: !0
+},
 */
