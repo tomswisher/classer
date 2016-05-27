@@ -2,6 +2,10 @@ body {
 	font-size: 20px;
 	font-family: "Courier New", Courier, monospace;
 }
+#waveform.brush-enabled wave wave,
+#waveform.brush-enabled wave canvas {
+	pointer-events: none;
+}
 .inline {
 	display: inline-block;
 }

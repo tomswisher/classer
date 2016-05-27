@@ -1,6 +1,7 @@
 'use strict';
 
 var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
+var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
 var symbolToClass = {}, currentSymbol, keyActivated;
 var keyToSymbol = {
@@ -216,6 +217,20 @@ function Main() {
 			}
 		});
 
+	d3.select('#brush-button')
+		.on('mousedown', function() {
+			if (brushEnabled === false) {
+				brushEnabled = true;
+				d3.select('#waveform').classed('brush-enabled', true);
+				window._disable_wavesurfer_seek = true;
+			} else {
+				brushEnabled = false;
+				d3.select('#waveform').classed('brush-enabled', false);
+				window._disable_wavesurfer_seek = false;
+			}
+			console.log('brushEnabled = '+brushEnabled);
+		});
+
 	d3.select('#export-data-button')
 		.on('click', function() {
 			ExportData();
@@ -225,7 +240,7 @@ function Main() {
     d3.select('#speed-slider')
         .on('change', function() {
             playbackSpeed = this.value;
-            d3.select('#playbackSpeed-value').text(parseFloat(playbackSpeed).toFixed(1));
+            d3.select('#speed-value').text(parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
             Update('speed-slider');
         });
