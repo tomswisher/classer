@@ -179,7 +179,7 @@ function Main() {
 		// On seeking. Callback will receive (float) progress [0..1].
 		oldTime = progress*wavesurfer.getDuration();
 		secondsFloat = Math.floor(10*oldTime)/10;
-		Update('seek');
+		// Update('seek');
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
 		// On zooming. Callback will receive (integer) minPxPerSec.
@@ -288,8 +288,12 @@ function Main() {
 	d3.select('#class-counters')
 		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
 	keyActivated = false;
+	//           shift multi
+	// keypress  no    yes
+	// keydown   yes   yes
+	// keyup	 yes   no
 	$(document)
-		.bind('keydown', function(event) {
+		.on('keydown', function(event) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
 			var newSymbol = keyToSymbol[event.which];
 			if (newSymbol === currentSymbol && keyActivated === false) { return; }
@@ -304,9 +308,15 @@ function Main() {
 			}
 			Update('keydown');
 		})
-		.bind('keyup', function(e) {
+		.on('keyup', function(event) {
 			keyActivated = true;
-		});
+			Update('keyup');
+		})
+		// .on('keypress', function(event) {
+		// 	if (event.shiftKey === true) { shiftKeyDown = false; } 
+		// 	Update('keypress');
+		// })
+		;
 
 	function Update(source) {
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
