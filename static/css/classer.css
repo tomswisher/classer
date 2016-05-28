@@ -1,6 +1,10 @@
 body {
-	font-size: 20px;
+	font-size: 16px;
 	font-family: "Courier New", Courier, monospace;
+	// font-family: Helvetica, sans-serif;
+}
+button {
+	font-size: 14px;
 }
 #waveform.brush-enabled wave wave,
 #waveform.brush-enabled wave canvas {
@@ -19,7 +23,7 @@ body {
 	overflow-x: scroll;
 }
 .label {
-	font-size: 15px;
+	// font-size: 16px;
 	dominant-baseline: middle;
 	text-anchor: middle;
 }
@@ -27,34 +31,38 @@ button.med-button {
 	width: 100px;
 }
 text.label {
-	stroke: black;
-	stroke-width: 1px;
+	// font-family: Helvetica, sans-serif;
+	// stroke: black;
+	// stroke-width: 1px;
 }
 .block-rect {
 	// stroke: white;
 	// stroke-width: 1px;
-	opacity: 0.6;
+	// opacity: 0.6;
+	shape-rendering: crispEdges;
 }
 // #class1-form, #class2-form {
 // 	text-transform: uppercase;
 // }
-rect.class0 {
-	fill: white;
+div.class2 {
+	color: orange;
 }
 div.class1 {
 	color: blue;
 }
+rect.class0 {
+	fill: white;
+}
 rect.class1 {
 	fill: blue;
-}
-div.class2 {
-	color: orange;
 }
 rect.class2 {
 	fill: orange;
 }
 .brush .extent {
-  stroke: #fff;
-  fill-opacity: .125;
+  // fill-opacity: 0.6;
+  // stroke: red;
+  // stroke: #fff;
+  // fill-opacity: .125;
   shape-rendering: crispEdges;
 }

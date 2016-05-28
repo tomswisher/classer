@@ -98,11 +98,13 @@ function Main() {
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 
+	var waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 	var waveContainer = d3.select('#waveform').select('wave');
 	var svg = waveContainer.append('svg')
-		.attr('width', minPxPerSec*wavesurfer.getDuration())
+		.attr('width', waveformWidth)
 		.attr('height', waveformHeight);
-	var blocksRoot = svg.append('g').attr('class', 'blocks-root');
+	var blocksRoot = svg.append('g').attr('class', 'blocks-root')
+		.attr('transform', 'translate(0,0)');
 	blocksData = d3.range(numSeconds*blocksPerSec)
 		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
 	var blocksGs = blocksRoot.selectAll('g').data(blocksData);
@@ -146,22 +148,44 @@ function Main() {
 			});
 
 	var xScale = d3.scale.linear()
-		.domain([0, wavesurfer.getDuration()])
-		.range([0, minPxPerSec*wavesurfer.getDuration()]);
+		.domain([0, blocksData.length-1])
+		.range([0, waveformWidth]);
 
-	// ToDo: move brush above wavesurfer elements to register mouse events
 	var brush = d3.svg.brush()
 		.x(xScale)
-		.on('brush', brushed);
+		.on('brushstart', function() {
+			Update('brushstart');
+		})
+		// .on('brush', brushed)
+		.on('brushend', function() {
+			brushed();
+			clearBrush();
+		});
 	blocksRoot.append('g')
 		.attr('class', 'brush')
 		.call(brush)
 		.selectAll('rect')
-			.attr('y', 0)
-			.attr('height', wavesurferOpts.height);
+			.attr('y', 2)
+			.attr('height', wavesurferOpts.height-4);
 
 	function brushed() {
-		console.log(brush.extent());
+		var minIndex = Math.floor(brush.extent()[0]);
+		var maxIndex = Math.ceil(brush.extent()[1]);
+		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+		for (var i=minIndex; i<=maxIndex; i++) {
+			ChangeBlockAtIndex(i, newClassNumber);
+		}
+	};
+
+	function updateBrushColor() {
+		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+		blocksRoot.selectAll('.brush rect.extent')
+			.attr('class', 'extent') // reset classes
+			.classed('class'+newClassNumber, true);
+	}
+
+	function clearBrush() {
+		blocksRoot.selectAll('g.brush').call(brush.clear());
 	};
 
 	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
@@ -217,16 +241,20 @@ function Main() {
 			}
 		});
 
-	d3.select('#brush-button')
+	d3.select('#interaction-mode-text').text('Automatic classification as audio plays. Click waveform to change time.');
+
+	d3.select('#interaction-mode-button')
 		.on('mousedown', function() {
 			if (brushEnabled === false) {
 				brushEnabled = true;
-				d3.select('#waveform').classed('brush-enabled', true);
 				window._disable_wavesurfer_seek = true;
+				d3.select('#waveform').classed('brush-enabled', true);
+				d3.select('#interaction-mode-text').text('Manual classification. Click and drag waveform to add a class');
 			} else {
 				brushEnabled = false;
-				d3.select('#waveform').classed('brush-enabled', false);
 				window._disable_wavesurfer_seek = false;
+				d3.select('#waveform').classed('brush-enabled', false);
+				d3.select('#interaction-mode-text').text('Automatic classification as audio plays. Click waveform to change time.');
 			}
 			console.log('brushEnabled = '+brushEnabled);
 		});
@@ -252,10 +280,8 @@ function Main() {
 			minPxPerSec = wsZoomScale(zoomValue);
 			wavesurfer.zoom(minPxPerSec);
 			d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
-			svg
-				.attr({
-					width: minPxPerSec*wavesurfer.getDuration(),
-				});
+			waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
+			svg.attr('width', waveformWidth);
 			blocksGs
 				.attr('transform', function(d,i) {
 					var xT = i*minPxPerSec/blocksPerSec;
@@ -264,9 +290,7 @@ function Main() {
 				})
 				.each(function(d) {
 					d3.select(this).selectAll('rect')
-						.attr({
-							width: minPxPerSec/blocksPerSec,
-						});
+						.attr('width', minPxPerSec/blocksPerSec);
 					// d3.select(this).selectAll('text')
 					// 	.attr({
 					// 		x: 0.5*minPxPerSec/blocksPerSec,
@@ -335,16 +359,26 @@ function Main() {
 
 	function Update(source) {
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
+		if (brushEnabled === true) {
+			updateBrushColor();
+		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('');
-			return;
+		} else {
+			d3.select('#key-pressed').text(currentSymbol);
 		}
-		d3.select('#key-pressed').text(currentSymbol);
-        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-        var oldClassNumber = d3.select(blocksGs[0][blocksIndex]).selectAll('rect').datum()['class'];
-		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+		if (brushEnabled === false) {
+	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+	        var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+	        ChangeBlockAtIndex(blocksIndex, newClassNumber);
+	    }
+	};
+
+	function ChangeBlockAtIndex(blocksIndex, newClassNumber) {
+		var block = d3.select(blocksGs[0][blocksIndex]);
+        var oldClassNumber = block.selectAll('rect').datum()['class'];
         blocksData[blocksIndex].class = newClassNumber;
-		d3.select(blocksGs[0][blocksIndex])
+		block
 			.datum(newClassNumber)
 			.each(function(d) {
 				d3.select(this).selectAll('rect')
@@ -357,7 +391,7 @@ function Main() {
         classCounters[newClassNumber] += 1;
         d3.select('#class-counters')
             .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
-	};
+	}
 
 	function ExportData() {
 		exportTime = new Date().getTime();
