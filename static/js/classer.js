@@ -93,7 +93,7 @@ function Main() {
 	var wsZoomScale = d3.scale.linear()
 		.domain([1,2])
 		.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
-	var zoomValue = 1.5;
+	var zoomValue = Number(d3.select('#zoom-slider').node().value);
 	var minPxPerSec = wsZoomScale(zoomValue);
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
@@ -281,6 +281,7 @@ function Main() {
 			wavesurfer.zoom(minPxPerSec);
 			d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 			waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
+			xScale.range([0, waveformWidth]);
 			svg.attr('width', waveformWidth);
 			blocksGs
 				.attr('transform', function(d,i) {
