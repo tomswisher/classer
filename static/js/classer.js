@@ -95,10 +95,10 @@ function Main() {
 		.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
 	var zoomValue = Number(d3.select('#zoom-slider').node().value);
 	var minPxPerSec = wsZoomScale(zoomValue);
+	var waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
 	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
 
-	var waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 	var waveContainer = d3.select('#waveform').select('wave');
 	var svg = waveContainer.append('svg')
 		.attr('width', waveformWidth)
@@ -215,6 +215,7 @@ function Main() {
 		// On seeking. Callback will receive (float) progress [0..1].
 		oldTime = progress*wavesurfer.getDuration();
 		secondsFloat = Math.floor(10*oldTime)/10;
+		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		// Update('seek');
 	});
 	wavesurfer.on('zoom', function(minPxPerSec) {
