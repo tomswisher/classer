@@ -65,7 +65,8 @@ rect.class2 {
 }
 .brush .extent {
   // fill-opacity: 0.6;
-  // stroke: red;
+  stroke: red;
+  stroke-width: 1px;
   // stroke: #fff;
   // fill-opacity: .125;
   shape-rendering: crispEdges;

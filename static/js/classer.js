@@ -156,7 +156,9 @@ function Main() {
 		.on('brushstart', function() {
 			Update('brushstart');
 		})
-		// .on('brush', brushed)
+		.on('brush', function() {
+			snapBrush();
+		})
 		.on('brushend', function() {
 			if (brushEnabled === true) {
 				brushed();
@@ -167,14 +169,16 @@ function Main() {
 		.attr('class', 'brush')
 		.call(brush)
 		.selectAll('rect')
-			.attr('y', 2)
-			.attr('height', wavesurferOpts.height-4);
+			// .attr('y', 2)
+			// .attr('height', wavesurferOpts.height-4)
+			.attr('y', 0)
+			.attr('height', wavesurferOpts.height-1)
+			;
 
 	function brushed() {
-		var minIndex = Math.floor(brush.extent()[0]);
-		var maxIndex = Math.ceil(brush.extent()[1]);
+		snapBrush();
 		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-		for (var i=minIndex; i<=maxIndex; i++) {
+		for (var i=brush.extent()[0]; i<=brush.extent()[1]; i++) {
 			ChangeBlockAtIndex(i, newClassNumber);
 		}
 	};
@@ -184,6 +188,11 @@ function Main() {
 		blocksRoot.selectAll('.brush rect.extent')
 			.attr('class', 'extent') // reset classes
 			.classed('class'+newClassNumber, true);
+	}
+
+	function snapBrush() {
+		blocksRoot.selectAll('g.brush')
+			.call(brush.extent([Math.floor(brush.extent()[0]), Math.ceil(brush.extent()[1])-1]));
 	}
 
 	function clearBrush() {
@@ -243,7 +252,7 @@ function Main() {
 			}
 		});
 
-	d3.select('#interaction-mode-text').text('Automatic classification as audio plays. Click waveform to change time.');
+	d3.select('#interaction-mode-text').text('Automatic (click waveform to change time)');
 
 	d3.select('#interaction-mode-button')
 		.on('mousedown', function() {
@@ -253,13 +262,13 @@ function Main() {
 				window._disable_wavesurfer_seek = true;
 				d3.select('#waveform').classed('brush-enabled', true);
 				d3.select('.brush').classed('brush-disabled', false);
-				d3.select('#interaction-mode-text').text('Manual classification. Click and drag waveform to add a class');
+				d3.select('#interaction-mode-text').text('Manual (click and drag waveform to add a class)');
 			} else {
 				brushEnabled = false;
 				window._disable_wavesurfer_seek = false;
 				d3.select('#waveform').classed('brush-enabled', false);
 				d3.select('.brush').classed('brush-disabled', true);
-				d3.select('#interaction-mode-text').text('Automatic classification as audio plays. Click waveform to change time.');
+				d3.select('#interaction-mode-text').text('Automatic (click waveform to change time)');
 			}
 			console.log('brushEnabled = '+brushEnabled);
 		});
