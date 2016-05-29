@@ -158,7 +158,9 @@ function Main() {
 		})
 		// .on('brush', brushed)
 		.on('brushend', function() {
-			brushed();
+			if (brushEnabled === true) {
+				brushed();
+			}
 			clearBrush();
 		});
 	blocksRoot.append('g')
@@ -245,15 +247,18 @@ function Main() {
 
 	d3.select('#interaction-mode-button')
 		.on('mousedown', function() {
+			clearBrush();
 			if (brushEnabled === false) {
 				brushEnabled = true;
 				window._disable_wavesurfer_seek = true;
 				d3.select('#waveform').classed('brush-enabled', true);
+				d3.select('.brush').classed('brush-disabled', false);
 				d3.select('#interaction-mode-text').text('Manual classification. Click and drag waveform to add a class');
 			} else {
 				brushEnabled = false;
 				window._disable_wavesurfer_seek = false;
 				d3.select('#waveform').classed('brush-enabled', false);
+				d3.select('.brush').classed('brush-disabled', true);
 				d3.select('#interaction-mode-text').text('Automatic classification as audio plays. Click waveform to change time.');
 			}
 			console.log('brushEnabled = '+brushEnabled);
@@ -328,14 +333,15 @@ function Main() {
 	d3.select('#class-counters')
 		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
 	keyActivated = false;
-	//           shift multi
-	// keypress  no    yes
-	// keydown   yes   yes
-	// keyup	 yes   no
 	$(document)
 		.on('keydown', function(event) {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
+			if (event.shiftKey === true) {
+				d3.select('#interaction-mode-button').on('mousedown')();
+				return;
+			}
 			var newSymbol = keyToSymbol[event.which];
+			// console.log(keyActivated, currentSymbol, newSymbol);
 			if (newSymbol === currentSymbol && keyActivated === false) { return; }
 			if (newSymbol !== currentSymbol) {
 				currentSymbol = newSymbol;
@@ -343,6 +349,7 @@ function Main() {
 			} else if (newSymbol === currentSymbol && keyActivated === true) {
 				currentSymbol = undefined;
 				keyActivated = false;
+				return;
 			} else if (newSymbol === currentSymbol && keyActivated === false) {
 				currentSymbol = newSymbol;
 			}
@@ -353,6 +360,7 @@ function Main() {
 			Update('keyup');
 		})
 		// .on('keypress', function(event) {
+		// 	console.log(event.shiftKey);
 		// 	if (event.shiftKey === true) { shiftKeyDown = false; } 
 		// 	Update('keypress');
 		// })

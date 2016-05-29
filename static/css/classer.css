@@ -59,6 +59,10 @@ rect.class1 {
 rect.class2 {
 	fill: orange;
 }
+.brush.brush-disabled {
+	pointer-events: none;
+	visibility: hidden;
+}
 .brush .extent {
   // fill-opacity: 0.6;
   // stroke: red;
