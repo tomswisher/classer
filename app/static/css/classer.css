@@ -10,6 +10,20 @@ button {
 #waveform.brush-enabled wave canvas {
 	pointer-events: none;
 }
+#key-row {
+	width: auto;
+	height: 16px;
+	line-height: 16px;
+}
+#key-pressed {
+	width: 16px;
+	text-align: center;
+}
+.class-border {
+	border-style: solid;
+	border-width: 1px;
+	border-color: white;
+}
 .inline {
 	display: inline-block;
 }
@@ -51,28 +65,34 @@ text.label {
 .brush .extent {
 	fill: white;
 	// fill-opacity: 0.6;
-	stroke: red;
+	stroke: black;
 	stroke-width: 1px;
 	// stroke: #fff;
 	// fill-opacity: .125;
 	shape-rendering: crispEdges;
 }
 
-div.class2 {
-	color: orange;
-}
-div.class1 {
-	color: blue;
-}
 rect.class0,
 .brush .extent.class0 {
 	fill: white;
 }
 rect.class1,
 .brush .extent.class1 {
-	fill: blue;
+	fill: dodgerblue;
 }
 rect.class2,
 .brush .extent.class2 {
 	fill: orange;
+}
+.class-border.class1 {
+	border-color: dodgerblue;
+}
+.class-border.class2 {
+	border-color: orange;
+}
+.class-text.class1 {
+	color: dodgerblue;
+}
+.class-text.class2 {
+	color: orange;
 }

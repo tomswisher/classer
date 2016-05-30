@@ -428,9 +428,20 @@ function Main() {
 			updateBrushColor();
 		}
 		if (currentSymbol === undefined) {
-			d3.select('#key-pressed').text('');
+			d3.select('#key-pressed').text('\u00A0');
+			d3.selectAll('.class-border').classed('class1', false).classed('class2', false);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
+			switch (symbolToClass[currentSymbol]) {
+				case '1':
+					d3.selectAll('.class-border').classed('class1', true).classed('class2', false);
+					break;
+				case '2':
+					d3.selectAll('.class-border').classed('class1', false).classed('class2', true);
+					break;
+				default:
+					d3.selectAll('.class-border').classed('class1', false).classed('class2', false);
+			}; 
 		}
 		if (brushEnabled === false) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
