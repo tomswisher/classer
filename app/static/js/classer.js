@@ -364,9 +364,12 @@ function Main() {
 		});
 	d3.selectAll('#class1-submit, #class2-submit')
 		.on('mousedown', function(d) {
+			var classOther = (d.class === '1') ? '2' : '1';
+			var oldValueOther = d3.select('#class'+classOther+'-label').text();
 			var oldValue = d3.select('#class'+d.class+'-label').text();
 			var newValue = d3.select('#class'+d.class+'-form').node().value.toUpperCase();
 			d3.select('#class'+d.class+'-form').node().value = '';
+			if (newValue === oldValueOther) { return; }
 			if (letterArray.indexOf(newValue) !== -1 || numberArray.indexOf(newValue) !== -1) {
 				delete(symbolToClass[oldValue]);
 				symbolToClass[newValue] = d.class;
@@ -384,6 +387,10 @@ function Main() {
 			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
 			if (event.shiftKey === true) {
 				d3.select('#interaction-mode-button').on('mousedown')();
+				return;
+			}
+			if (event.which === 32) { // space
+				d3.select('#play-pause-ws-button').on('mousedown')();
 				return;
 			}
 			var newSymbol = keyToSymbol[event.which];
