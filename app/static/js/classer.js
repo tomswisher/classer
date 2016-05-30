@@ -156,15 +156,15 @@ function Main() {
 		.x(xScale)
 		.on('brushstart', function() {
 			oldExtent = [brush.extent()[0], brush.extent()[1]];
-			console.log('brushstart', oldExtent, brush.extent());
+			// console.log('brushstart', oldExtent, brush.extent());
 		})
 		.on('brush', function() {
 			snapBrush();
-			console.log('brush     ', oldExtent, brush.extent());
+			// console.log('brush     ', oldExtent, brush.extent());
 			if (isBrushing === false) {
 				var ext = [brush.extent()[0], brush.extent()[1]];
 				if (ext[0] !== oldExtent[0] && ext[1] !== oldExtent[1] && ext[1]-ext[0] !== oldExtent[1]-oldExtent[0]) {
-					console.log('applyBrush');
+					// console.log('applyBrush');
 					applyBrush(oldExtent[0], oldExtent[1]);
 				}
 				isBrushing = true;
@@ -172,7 +172,7 @@ function Main() {
 			oldExtent = [brush.extent()[0], brush.extent()[1]];
 		})
 		.on('brushend', function() {
-			console.log('brushend  ', oldExtent, brush.extent());
+			// console.log('brushend  ', oldExtent, brush.extent());
 			isBrushing = false;
 			// oldExtent = [brush.extent()[0], brush.extent()[1]];
 			// if (brush.extent()[0] !== oldExtent[0] && brush.extent()[1] !== oldExtent[1]) {
@@ -307,7 +307,7 @@ function Main() {
 				d3.select('.brush').classed('brush-disabled', true);
 				d3.select('#interaction-mode-text').text('Automatic (click waveform to change time)');
 			}
-			console.log('brushEnabled = '+brushEnabled);
+			// console.log('brushEnabled = '+brushEnabled);
 		});
 
 	d3.select('#export-data-button')
