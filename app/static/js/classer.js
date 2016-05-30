@@ -213,6 +213,7 @@ function Main() {
 	}
 
 	function clearBrush() {
+		oldExtent = null;
 		blocksRoot.selectAll('g.brush')
 			.call(brush.clear());
 	};
@@ -288,24 +289,24 @@ function Main() {
 			d3.select('wave').node().scrollLeft = 0;
 		})
 
-	d3.select('#interaction-mode-text').text('Automatic (click waveform to change time)');
-
+	var manualModeText    = 'Manual (click + drag to add a class)';
+	var automaticModeText = 'Automatic (click to jump in time)';
+	d3.select('#interaction-mode-text').text(automaticModeText);
 	d3.select('#interaction-mode-button')
 		.on('mousedown', function() {
 			clearBrush();
-			oldExtent = null;
 			if (brushEnabled === false) {
 				brushEnabled = true;
 				window._disable_wavesurfer_seek = true;
 				d3.select('#waveform').classed('brush-enabled', true);
 				d3.select('.brush').classed('brush-disabled', false);
-				d3.select('#interaction-mode-text').text('Manual (click and drag waveform to add a class)');
+				d3.select('#interaction-mode-text').text(manualModeText);
 			} else {
 				brushEnabled = false;
 				window._disable_wavesurfer_seek = false;
 				d3.select('#waveform').classed('brush-enabled', false);
 				d3.select('.brush').classed('brush-disabled', true);
-				d3.select('#interaction-mode-text').text('Automatic (click waveform to change time)');
+				d3.select('#interaction-mode-text').text(automaticModeText);
 			}
 			// console.log('brushEnabled = '+brushEnabled);
 		});
@@ -318,6 +319,7 @@ function Main() {
     var playbackSpeed = 1.0;
     d3.select('#speed-slider')
         .on('change', function() {
+        	clearBrush();
             playbackSpeed = this.value;
             d3.select('#speed-value').text(parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
@@ -326,6 +328,7 @@ function Main() {
 
 	d3.select('#zoom-slider')
 		.on('change', function() {
+			clearBrush();
             Update('zoom-sliderStart');
 			zoomValue = Number(this.value);
 			minPxPerSec = wsZoomScale(zoomValue);
