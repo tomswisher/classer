@@ -62,6 +62,7 @@ if (sessionStorage.songURL === undefined) {
 } else {
 	songURL = sessionStorage.songURL;
 }
+
 d3.select('#load-wavesurfer-button')
 	.on('mousedown', function() {
 		songURL = d3.select('#song-url-form').node().value;
@@ -70,18 +71,29 @@ d3.select('#load-wavesurfer-button')
 		d3.select('#initial-items').selectAll('*').remove();
 		d3.select('#initial-items').text('Loading at 0%');
 	});
+
 d3.select('#song-url-form')
 	.each(function() { this.value = songURL; })
 	.on('change', function() {
 		songURL = this.value;
 		sessionStorage.setItem('songURL', songURL);
 	});
+
 d3.select('#defaults-button')
-	.on('mousedown', function() {
+	.on('change', function() {
 		songURL = defaultSongURL;
 		sessionStorage.setItem('songURL', songURL);
 		d3.select('#song-url-form').node().value = songURL;
 	});
+
+// upload new song
+d3.select('#upload')
+    .on('change', function() {
+        songURL = document.getElementById('upload').files[0].name
+        //assumes you put audio in folder /static/audio
+        wavesurfer.load('../static/audio/'+songURL);
+    });
+
 
 function Main() {
 	var waveformHeight = wavesurferOpts.height+50;

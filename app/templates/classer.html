@@ -4,15 +4,25 @@
 <title>Classer</title>
 <link rel='stylesheet' type='text/css' href='../static/css/classer.css'></link>
 </head>
+
 <body>
 <br>
-<div id='initial-items'>
-	<div class='inline'><button class='med-button' id='load-wavesurfer-button'>Load Song</button></div>
-	<div class='inline'><input type='form' id='song-url-form' size='50' value=''></input></div>
-	<div class='inline'><button class='med-button' id='defaults-button'>Defaults</button></div>
+    <div id='initial-items'>
+        <div class='inline'><button class='med-button' id='load-wavesurfer-button'>Load Song</button></div>
+        <div class='inline'><input type='form' id='song-url-form' size='50' value=''></input></div>
+        <div class='inline'><button class='med-button' id='defaults-button'>Defaults</button></div>
+    </div>
+<div id='song-title' class='unloaded'>
 </div>
-<div id='song-title' class='unloaded'></div>
+
 <br>
+    <div class='unloaded'>
+        <div class='inline'>
+            <input type='file' class='med-button' id='upload'></input>
+        </div>
+    </div>
+<br>
+
 <div id='wavesurfer-container' class='unloaded'>
 	<div id='waveform'></div>
 	<br>
