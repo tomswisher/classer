@@ -469,6 +469,21 @@ function Main() {
 	    	};
 	    	addKeyValuePairs(wavesurfer.backend, 'wavesurfer.backend', 0);
 	    	addKeyValuePairs(wavesurfer, 'wavesurfer', 0);
+	    	var metadata = {
+	    		songURL:songURL,
+	    		songDurationSec:wavesurfer.getDuration(),
+	    		blocksPerSec:blocksPerSec,
+	    		classCounters:classCounters,
+	    		startTime:startTime,
+	    		exportTime:exportTime,
+	    		elapsedSec:(exportTime-startTime)/1000,
+	    		class1Key:d3.select('#class1-label').text(),
+	    		class2Key:d3.select('#class2-label').text(),
+	    		zoomValue:zoomValue,
+	    		playbackSpeed:playbackSpeed,
+	    	};
+	    	addKeyValuePairs(metadata, 'metadata', 0);
+
 	    	$.each(usedKeyHash, function(key, value) {
 	    		keyValueArray.push({ 'key':key, 'value':value });
 	    	});
@@ -551,7 +566,6 @@ function Main() {
 			class2Key:d3.select('#class2-label').text(),
 			zoomValue:zoomValue,
 			playbackSpeed:playbackSpeed,
-
 		};
 		exportedData.blocksData = blocksData;
 		console.log(exportedData);
