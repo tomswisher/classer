@@ -2,9 +2,50 @@ body {
 	font-size: 16px;
 	font-family: "Courier New", Courier, monospace;
 	// font-family: Helvetica, sans-serif;
+	margin-top: 20px;
+}
+#song-input {
+	visibility: hidden;
+	width: 0px;
+	height: 0px;
+}
+#song-url-value {
+	width: 580px;
+	cursor: pointer;
 }
 button {
 	font-size: 14px;
+	cursor: pointer;
+}
+button.medium {
+	width: 100px;
+}
+#wavesurfer-container {
+	margin-bottom: 20px;
+}
+#wavesurfer-container > *, 
+.block {
+	min-width: 620px;
+}
+.row {
+	overflow: hidden;
+	height: 30px;
+	line-height: 30px;
+	vertical-align: middle;
+}
+.flex {
+	display: -webkit-flex;
+	height: 22px;
+}
+.expanded {
+	-webkit-flex: 1;
+	width: 100%;
+}
+.border-cell {
+	height: 20px;
+	border-style: solid;
+	border-width: 1px;
+	border-color: grey;
 }
 #waveform.brush-enabled wave wave,
 #waveform.brush-enabled wave canvas {
@@ -12,29 +53,36 @@ button {
 }
 #key-row {
 	width: auto;
-	height: 16px;
-	line-height: 16px;
 }
 #key-pressed {
-	width: 16px;
+	width: 20px;
 	text-align: center;
 }
-.class-border {
-	border-style: solid;
-	border-width: 1px;
-	border-color: white;
+.class-outline {
+	outline-style: solid;
+	outline-width: 1px;
+	outline-color: white;
 }
-.inline {
+.left, .right {
 	display: inline-block;
+}
+.left {
+	float: left;
+}
+.left * {
+	margin-right: 10px;
 }
 .right {
 	float: right;
+}
+.right * {
+	margin-left: 10px;
 }
 .wrap {
 	word-wrap: break-word;
 }
 .unloaded {
-	visibility: hidden;
+	display: none;
 }
 .scrolls {
 	overflow-x: scroll;
@@ -43,9 +91,6 @@ button {
 	// font-size: 16px;
 	dominant-baseline: middle;
 	text-anchor: middle;
-}
-button.med-button {
-	width: 100px;
 }
 text.label {
 	// font-family: Helvetica, sans-serif;
@@ -72,23 +117,23 @@ text.label {
 	shape-rendering: crispEdges;
 }
 
-rect.class0,
+.block-rect.class0,
 .brush .extent.class0 {
 	fill: white;
 }
-rect.class1,
+.block-rect.class1,
 .brush .extent.class1 {
 	fill: dodgerblue;
 }
-rect.class2,
+.block-rect.class2,
 .brush .extent.class2 {
 	fill: orange;
 }
-.class-border.class1 {
-	border-color: dodgerblue;
+.class-outline.class1 {
+	outline-color: dodgerblue;
 }
-.class-border.class2 {
-	border-color: orange;
+.class-outline.class2 {
+	outline-color: orange;
 }
 .class-text.class1 {
 	color: dodgerblue;

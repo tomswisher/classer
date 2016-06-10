@@ -4,67 +4,52 @@
 <title>Classer</title>
 <link rel='stylesheet' type='text/css' href='../static/css/classer.css'></link>
 </head>
-
 <body>
-<br>
-    <div id='initial-items'>
-        <div class='inline'><button class='med-button' id='load-wavesurfer-button'>Load Song</button></div>
-        <div class='inline'><input type='form' id='song-url-form' size='50' value=''></input></div>
-        <div class='inline'><button class='med-button' id='defaults-button'>Defaults</button></div>
-    </div>
-<div id='song-title' class='unloaded'>
+
+<div class='block'>
+	<div class='row'>
+		<input type='file' id='song-input'></input>
+		<div class='left'><button class='medium' id='load-song-button'>Load Song</button></div>
+		<div class='flex'><div class='expanded border-cell' id='song-url-value'>Click to choose a song</div></div>
+	</div>
+	<div class='row'>	
+		<div class='left'><button class='medium' id='defaults-button'>Defaults</button></div>
+	</div>
 </div>
-
-<br>
-    <div class='unloaded'>
-        <div class='inline'>
-            <input type='file' class='med-button' id='upload'></input>
-        </div>
-    </div>
-<br>
-
-<div id='wavesurfer-container' class='unloaded'>
-	<div id='waveform'></div>
-	<br>
-	<div>
-		<div class='inline'><button class='med-button' id='play-pause-ws-button'>Play Track</button></div>&nbsp<div class='inline' id='current-time'>0.0s</div><div class='inline right'><button class='med-button' id='reset-ws-button'>Reset Song</button></div>
+<div class='block'>
+	<div class='row'>
+		<div class='left' id='song-title'></div>
 	</div>
-	<br>
-	<div>
-		<div class='inline'><button class='med-button' id='interaction-mode-button'>Toggle Mode</button></div>&nbsp<div class='inline' id='interaction-mode-text'></div>
+</div>
+<div class='unloaded' id='wavesurfer-container'></div>
+<div class='block unloaded'>
+	<div class='row'>
+		<div class='left'><button class='medium' id='play-pause-ws-button'>Play Track</button><span id='current-time'>0.0s</span></div>
+		<div class='right'><button class='medium' id='reset-ws-button'>Reset Song</button></div>
 	</div>
-	<br>
-	<div id='key-row' class='inline class-border'>
-		Key Pressed: <div class='inline' id='key-pressed'>&nbsp</div>
-	</div><br>
-	<br>
-	<div>
-		Zoom Level: x<div class='inline' id='zoom-value'>2.0</div>
+	<div class='row'>
+		<div class='left'><button class='medium' id='interaction-mode-button'>Toggle Mode</button><span id='interaction-mode-text'></span></div>
 	</div>
-	<div class='settings'>
-		<input id='zoom-slider' type='range' min='1' max='10' step='0.1' value='2.0' style='width:100%' />
+	<div class='row'>
+		<div class='left class-outline' id='key-row'>Key Pressed: <span id='key-pressed'>&nbsp</span></div>
 	</div>
-	<br>
-	<div>
-		Playback Speed: x<div class='inline' id='speed-value'>1.0</div>
+	<div class='row settings'>
+		<div class='left'>Zoom Level: x<span id='zoom-value'>2.0</span></div>
+		<div class='flex'><input class='expanded' id='zoom-slider' type='range' min='1' max='10' step='0.1' value='2.0' /></div>
 	</div>
-	<div class='settings'>
-		<input id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' style='width:100%' />
+	<div class='row settings'>
+		<div class='left'>Playback Speed: x<span id='speed-value'>1.0</span></div>
+		<div class='flex'><input class='expanded' id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' /></div>
 	</div>
-	<br>
-	<div class='settings'>
-		<div class='class-text class1 inline'>Class 1</div> is key: <div class='inline' id='class1-label'>Z</div>&nbsp&nbsp<button id='class1-submit'>Change to:</button>&nbsp<input type='form' id='class1-form' size='1' maxlength='1' value=''></input>
+	<div class='row settings'>
+		<div class='left' ><span class='class-text class1'>Class 1</span> is key: <span id='class1-label'>Z</span><button id='class1-submit'>Change to:</button><input type='form' id='class1-form' size='1' maxlength='1' value=''></input></div>
+		<div class='right'><span class='class-text class2'>Class 2</span> is key: <span id='class2-label'>X</span><button id='class2-submit'>Change to:</button><input type='form' id='class2-form' size='1' maxlength='1' value=''></input></div>
 	</div>
-	<div class='settings'>
-		<div class='class-text class2 inline'>Class 2</div> is key: <div class='inline' id='class2-label'>X</div>&nbsp&nbsp<button id='class2-submit'>Change to:</button>&nbsp<input type='form' id='class2-form' size='1' maxlength='1' value=''></input>
+	<div class='row'>
+		<div class='left'>Class Counters: <span id='class-counters'></span></div>
 	</div>
-	<br>
-	<div>
-		Class Counters: <div class='inline' id='class-counters'></div>
-	</div>
-	<br>
-	<div>
-		<div class='inline'><button class='med-button' id='export-data-button'>Export Data</button></div>
+	<div class='row'>
+		<div class='left'><button class='medium' id='export-data-button'>Export Data</button></div>
 	</div>
 </div>
 

@@ -3,6 +3,7 @@
 var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
+var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 var symbolToClass = {}, currentSymbol, keyActivated;
 var keyToSymbol = {
 	// 32:' ',
@@ -13,7 +14,7 @@ var keyToSymbol = {
 var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
 var wavesurferOpts = {
-	height: 128,
+	height: 200,
 	waveColor: "black",
 	progressColor: "#999",
 	cursorColor: "#333",
@@ -23,10 +24,10 @@ var wavesurferOpts = {
 	pixelRatio: window.devicePixelRatio,
 	fillParent: !0,
 	scrollParent: !1,
-	hideScrollbar: !1,
+    hideScrollbar: !1,
 	normalize: !1,
 	audioContext: null,
-	container: '#waveform',
+	container: '#wavesurfer-container',
 	dragSelection: !0,
 	loopSelection: !0,
 	audioRate: 1,
@@ -42,16 +43,15 @@ var wavesurferOpts = {
 var wavesurfer = WaveSurfer.create(wavesurferOpts);
 wavesurfer.on('loading', function(a) {
 	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
-	d3.select('#initial-items').text('Loading at '+a+'%');
+	d3.select('#song-title').text('Loading at '+a+'%');
 });
 wavesurfer.on('error', function(xhrError) {
 	// Occurs on error. Callback will receive (string) error message.
-	d3.select('#initial-items').text('Error loading '+songURL);
+	d3.select('#song-title').text('Error loading '+songURL);
 });
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	d3.selectAll('.unloaded').classed('unloaded', false);
-	d3.select('#initial-items').remove();
 	d3.select('#song-title').text(songURL);
 	Main();
 });
@@ -63,37 +63,32 @@ if (sessionStorage.songURL === undefined) {
 	songURL = sessionStorage.songURL;
 }
 
-d3.select('#load-wavesurfer-button')
-	.on('mousedown', function() {
-		songURL = d3.select('#song-url-form').node().value;
-		sessionStorage.setItem('songURL', songURL);
-		wavesurfer.load('../static/audio/'+songURL);
-		d3.select('#initial-items').selectAll('*').remove();
-		d3.select('#initial-items').text('Loading at 0%');
+// upload new song
+d3.select('#song-url-value')
+	.text(songURL)
+	.on('click', function() {
+		d3.select('#song-input').node().click();
 	});
 
-d3.select('#song-url-form')
-	.each(function() { this.value = songURL; })
-	.on('change', function() {
-		songURL = this.value;
-		sessionStorage.setItem('songURL', songURL);
+d3.select('#song-input')
+    .on('change', function() {
+    	songURL = this.files[0].name;
+    	d3.select('#song-url-value').text(songURL);
+        sessionStorage.setItem('songURL', songURL);
+    });
+
+d3.select('#load-song-button')
+	.on('click', function() {
+		// assumes you put audio in folder /static/audio
+		wavesurfer.load('../static/audio/'+songURL);
 	});
 
 d3.select('#defaults-button')
-	.on('change', function() {
+	.on('click', function() {
 		songURL = defaultSongURL;
 		sessionStorage.setItem('songURL', songURL);
-		d3.select('#song-url-form').node().value = songURL;
+		d3.select('#song-url-value').text(songURL);
 	});
-
-// upload new song
-d3.select('#upload')
-    .on('change', function() {
-        songURL = document.getElementById('upload').files[0].name
-        //assumes you put audio in folder /static/audio
-        wavesurfer.load('../static/audio/'+songURL);
-    });
-
 
 function Main() {
 	var waveformHeight = wavesurferOpts.height+50;
@@ -109,10 +104,10 @@ function Main() {
 	var minPxPerSec = wsZoomScale(zoomValue);
 	var waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 	wavesurfer.zoom(minPxPerSec); // this is not initialized by WaveSurfer for some reason
-	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
+	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+parseInt(minPxPerSec)+'\tpixels/s)');
 
-	var waveContainer = d3.select('#waveform').select('wave');
-	var svg = waveContainer.append('svg')
+	var waveNode = d3.select('#wavesurfer-container').select('wave');
+	var svg = waveNode.append('svg')
 		.attr('width', waveformWidth)
 		.attr('height', waveformHeight);
 	var blocksRoot = svg.append('g').attr('class', 'blocks-root')
@@ -230,7 +225,6 @@ function Main() {
 			.call(brush.clear());
 	};
 
-	var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
 		var backup_oldTime = oldTime;
@@ -345,7 +339,7 @@ function Main() {
 			zoomValue = Number(this.value);
 			minPxPerSec = wsZoomScale(zoomValue);
 			wavesurfer.zoom(minPxPerSec);
-			d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+minPxPerSec+'\tpixels/s)');
+			d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+parseInt(minPxPerSec)+'\tpixels/s)');
 			waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 			xScale.range([0, waveformWidth]);
 			svg.attr('width', waveformWidth);
@@ -444,18 +438,18 @@ function Main() {
 		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
-			d3.selectAll('.class-border').classed('class1', false).classed('class2', false);
+			d3.selectAll('.class-outline').classed('class1', false).classed('class2', false);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
 			switch (symbolToClass[currentSymbol]) {
 				case '1':
-					d3.selectAll('.class-border').classed('class1', true).classed('class2', false);
+					d3.selectAll('.class-outline').classed('class1', true).classed('class2', false);
 					break;
 				case '2':
-					d3.selectAll('.class-border').classed('class1', false).classed('class2', true);
+					d3.selectAll('.class-outline').classed('class1', false).classed('class2', true);
 					break;
 				default:
-					d3.selectAll('.class-border').classed('class1', false).classed('class2', false);
+					d3.selectAll('.class-outline').classed('class1', false).classed('class2', false);
 			}; 
 		}
 		if (brushEnabled === false) {
