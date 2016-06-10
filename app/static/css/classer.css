@@ -4,6 +4,11 @@ body {
 	// font-family: Helvetica, sans-serif;
 	margin-top: 20px;
 }
+.debug {
+	visibility: hidden;
+	width: 0px;
+	height: 0px;
+}
 #song-input {
 	visibility: hidden;
 	width: 0px;
@@ -140,4 +145,10 @@ text.label {
 }
 .class-text.class2 {
 	color: orange;
+}
+.plain-text {
+	margin-bottom: 10px;
+}
+.plain-text span {
+	margin-right: 20px;
 }

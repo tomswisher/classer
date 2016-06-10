@@ -1,5 +1,8 @@
 'use strict';
 
+var logs = 0;
+var debug = 1;
+if (debug) { d3.selectAll('.debug').classed('debug', false); }
 var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
@@ -200,31 +203,6 @@ function Main() {
 			.attr('y', 0)
 			.attr('height', wavesurferOpts.height-1);
 
-	function applyBrush(minIndex, maxIndex) {
-		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-		for (var i=minIndex; i<maxIndex; i++) {
-			ChangeBlockAtIndex(i, newClassNumber);
-		}
-	};
-
-	function updateBrushColor() {
-		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-		blocksRoot.selectAll('.brush rect.extent')
-			.attr('class', 'extent') // reset classes
-			.classed('class'+newClassNumber, true);
-	}
-
-	function snapBrush() {
-		blocksRoot.selectAll('g.brush')
-			.call(brush.extent([Math.floor(brush.extent()[0]), Math.floor(brush.extent()[1])]));
-	}
-
-	function clearBrush() {
-		oldExtent = null;
-		blocksRoot.selectAll('g.brush')
-			.call(brush.clear());
-	};
-
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
 		var backup_oldTime = oldTime;
@@ -422,13 +400,11 @@ function Main() {
 			if (event.which !== 16) { // not shift
 				Update('keyup');
 			}
-		})
-		// .on('keypress', function(event) {
-		// 	console.log(event.shiftKey);
-		// 	if (event.shiftKey === true) { shiftKeyDown = false; } 
-		// 	Update('keypress');
-		// })
-		;
+		});
+
+	requestAnimationFrame(function() {
+		Update();
+	});
 
 	function Update(source) {
 		// console.log('Update '+source);
@@ -457,6 +433,63 @@ function Main() {
 	        var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
 	        ChangeBlockAtIndex(blocksIndex, newClassNumber);
 	    }
+	    if (debug) {
+	    	var keyValueArray = [];
+	    	var usedKeyHash = {};
+	    	var valueString;
+	    	var testRegExp = new RegExp('^get');
+	    	var skippedKeysHash = {
+	    		'wavesurfer.backend': ['gainNode', 'getAudioContext', 'getOfflineAudioContext', 'handlers'],
+	    		'wavesurfer': ['backend', 'defaultParams', 'drawer', 'Drawer', 'getArrayBuffer', 'handlers', 'WebAudio']
+	    	};
+	    	var indentString;
+	    	function addKeyValuePairs(myObject, keyText, indent) {
+	    		var indentString = Array(indent).join('    ');
+	    		var skippedKeys = (skippedKeysHash[keyText] !== undefined) ? skippedKeysHash[keyText] : [];
+	    		// if (logs) console.log('Looping over key '+keyText+'" skipping:', skippedKeys);
+	    		$.each(myObject, function(key, value) {
+	    			// if (logs) console.log(indentString+'"'+key+'", '+typeof(value));
+	    			if (skippedKeys.indexOf(key) !== -1) { return; }
+	    			if (usedKeyHash[key] !== undefined) { return; }
+	    			if (typeof(value) === 'function' && testRegExp.test(key) === true) {
+	    				// if (logs) console.log(indentString, value, myObject);
+	    				valueString = JSON.stringify(value.apply(myObject));
+	    			} else {
+	    				valueString = JSON.stringify(value);
+	    			}
+	    			if ([undefined, '{}'].indexOf(valueString) !== -1) { return; }
+	    			if (typeof(value) === 'object' && value !== null) {
+	    				// if (logs) console.log(indentString+'Stepping in to  "'+key+'" from "'+keyText+'" skipping:', skippedKeys);
+	    				addKeyValuePairs(value, key, indent+1);
+	    			} else {
+	    				usedKeyHash[key] = valueString;
+	    			}
+	    		});
+	    		// if (logs) console.log(indentString+'Done looping for "'+keyText+'"\n\n');
+	    	};
+	    	addKeyValuePairs(wavesurfer.backend, 'wavesurfer.backend', 0);
+	    	addKeyValuePairs(wavesurfer, 'wavesurfer', 0);
+	    	$.each(usedKeyHash, function(key, value) {
+	    		keyValueArray.push({ 'key':key, 'value':value });
+	    	});
+
+	    	var rows = d3.select('#wavesurfer-debug').selectAll('div.plain-text').data(keyValueArray);
+	    	rows.exit().remove();
+	    	rows.enter().append('div').attr('class', 'plain-text').each(function(d) {
+    			d3.select(this).append('span').attr('class', 'key-text');
+    			d3.select(this).append('span').attr('class', 'value-text');
+    		});
+	    	rows.each(function(d) {
+	    		var oldValue = d3.select(this).selectAll('span.value-text').attr('old-value');
+	    		if (String(d.value) !== String(oldValue)) {
+	    			d3.select(this).selectAll('span').interrupt()
+	    				.style('color', 'red').transition().duration(1000).style('color', 'black');
+	    		}
+    			d3.select(this).selectAll('span.key-text').text(d.key);
+    			d3.select(this).selectAll('span.value-text').text(d.value);
+    			d3.select(this).selectAll('span.value-text').attr('old-value', d.value);
+    		});
+	    }
 	};
 
 	function ChangeBlockAtIndex(blocksIndex, newClassNumber) {
@@ -476,7 +509,32 @@ function Main() {
         classCounters[newClassNumber] += 1;
         d3.select('#class-counters')
             .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
+	};
+
+	function applyBrush(minIndex, maxIndex) {
+		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+		for (var i=minIndex; i<maxIndex; i++) {
+			ChangeBlockAtIndex(i, newClassNumber);
+		}
+	};
+
+	function updateBrushColor() {
+		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+		blocksRoot.selectAll('.brush rect.extent')
+			.attr('class', 'extent') // reset classes
+			.classed('class'+newClassNumber, true);
 	}
+
+	function snapBrush() {
+		blocksRoot.selectAll('g.brush')
+			.call(brush.extent([Math.floor(brush.extent()[0]), Math.floor(brush.extent()[1])]));
+	}
+
+	function clearBrush() {
+		oldExtent = null;
+		blocksRoot.selectAll('g.brush')
+			.call(brush.clear());
+	};
 
 	function ExportData() {
 		exportTime = new Date().getTime();
