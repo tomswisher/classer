@@ -1,8 +1,10 @@
 'use strict';
 
+var wavesurfer;
 var logs = 0;
-var debug = 1;
+var debug = 0;
 if (debug) { d3.selectAll('.debug').classed('debug', false); }
+var trackPromptText = 'Click to choose a track';
 var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
@@ -43,55 +45,70 @@ var wavesurferOpts = {
 	mediaType: "audio",
 	autoCenter: !0,
 }
-var wavesurfer = WaveSurfer.create(wavesurferOpts);
-wavesurfer.on('loading', function(a) {
-	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
-	d3.select('#song-title').text('Loading at '+a+'%');
-});
-wavesurfer.on('error', function(xhrError) {
-	// Occurs on error. Callback will receive (string) error message.
-	d3.select('#song-title').text('Error loading '+songURL);
-});
-wavesurfer.on('ready', function() {
-	// When audio is loaded, decoded and the waveform drawn.
-	d3.selectAll('.unloaded').classed('unloaded', false);
-	d3.select('#song-title').text(songURL);
-	Main();
-});
-var songURL;
-if (sessionStorage.songURL === undefined) {
-	songURL = defaultSongURL;
-	sessionStorage.setItem('songURL', songURL);
+var trackURL;
+if (sessionStorage.trackURL === undefined) {
+	trackURL = defaultSongURL;
+	sessionStorage.setItem('trackURL', trackURL);
 } else {
-	songURL = sessionStorage.songURL;
+	trackURL = sessionStorage.trackURL;
 }
+InitWaveSurfer();
 
-// upload new song
-d3.select('#song-url-value')
-	.text(songURL)
-	.on('click', function() {
-		d3.select('#song-input').node().click();
+function InitWaveSurfer() {
+	wavesurfer = WaveSurfer.create(wavesurferOpts);
+	wavesurfer.on('loading', function(a) {
+		// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
+		// d3.select('#loading-value').text('Loading at '+a+'%');
+		d3.select('#loading-value').text('Loading Track...');
+	});
+	wavesurfer.on('error', function(xhrError) {
+		// Occurs on error. Callback will receive (string) error message.
+		d3.select('#loading-value').text('Error loading '+trackURL);
+	});
+	wavesurfer.on('ready', function() {
+		// When audio is loaded, decoded and the waveform drawn.
+		setLoadedClass('loaded');
+		d3.select('#loading-value').text('');
+		Main();
 	});
 
-d3.select('#song-input')
-    .on('change', function() {
-    	songURL = this.files[0].name;
-    	d3.select('#song-url-value').text(songURL);
-        sessionStorage.setItem('songURL', songURL);
-    });
-
-d3.select('#load-song-button')
-	.on('click', function() {
-		// assumes you put audio in folder /static/audio
-		wavesurfer.load('../static/audio/'+songURL);
-	});
-
-d3.select('#defaults-button')
-	.on('click', function() {
-		songURL = defaultSongURL;
-		sessionStorage.setItem('songURL', songURL);
-		d3.select('#song-url-value').text(songURL);
-	});
+	d3.select('#loading-value').text('');
+	d3.select('#track-url-value')
+		.text((trackURL !== defaultSongURL) ? trackURL : trackPromptText)
+		.on('click', function() {
+			d3.select('#track-input').node().click();
+		});
+	d3.select('#track-input')
+	    .on('change', function() {
+	    	trackURL = this.files[0].name;
+	    	sessionStorage.setItem('trackURL', trackURL);
+	    	d3.select('#track-url-value').text(trackURL);
+	    });
+	d3.select('#track-load-button')
+		.on('click', function() {
+			setLoadedClass('unloaded');
+			$(document).off();
+			wavesurfer.destroy();
+			requestAnimationFrame(function() {
+				InitWaveSurfer();
+				d3.select('#track-url-value').text(trackURL);
+				// assumes you put audio in folder /static/audio
+				wavesurfer.load('../static/audio/'+trackURL);
+			});
+		});
+	d3.select('#track-clear-button')
+		.on('click', function() {
+			trackURL = defaultSongURL;
+			sessionStorage.setItem('trackURL', defaultSongURL);
+			d3.select('#track-url-value').text(trackPromptText);
+			setLoadedClass('unloaded');
+			$(document).off();
+			wavesurfer.destroy();
+			requestAnimationFrame(function() {
+				InitWaveSurfer();
+			});
+		});
+};
 
 function Main() {
 	var waveformHeight = wavesurferOpts.height+50;
@@ -110,6 +127,7 @@ function Main() {
 	d3.select('#zoom-value').text(zoomValue.toFixed(1)+' ('+parseInt(minPxPerSec)+'\tpixels/s)');
 
 	var waveNode = d3.select('#wavesurfer-container').select('wave');
+	waveNode.selectAll('svg').remove();
 	var svg = waveNode.append('svg')
 		.attr('width', waveformWidth)
 		.attr('height', waveformHeight);
@@ -252,13 +270,9 @@ function Main() {
 
 	d3.select('#play-pause-ws-button')
 		.on('mousedown', function() {
-			var text = d3.select('#play-pause-ws-button').node().textContent; // allow for programmatic clicking
 			wavesurfer.playPause();
-			if (wavesurfer.backend.isPaused() === true) {
-				text = 'Play Track';
-			} else {
-				text = 'Pause Track';
-			}
+			d3.select('#play-pause-ws-button')
+				.text((wavesurfer.backend.isPaused() === true) ? 'Play' : 'Pause');
 		});
 
 	d3.select('#reset-ws-button')
@@ -282,13 +296,13 @@ function Main() {
 			if (brushEnabled === false) {
 				brushEnabled = true;
 				window._disable_wavesurfer_seek = true;
-				d3.select('#waveform').classed('brush-enabled', true);
+				d3.select('#wavesurfer-container').classed('brush-enabled', true);
 				d3.select('.brush').classed('brush-disabled', false);
 				d3.select('#interaction-mode-text').text(manualModeText);
 			} else {
 				brushEnabled = false;
 				window._disable_wavesurfer_seek = false;
-				d3.select('#waveform').classed('brush-enabled', false);
+				d3.select('#wavesurfer-container').classed('brush-enabled', false);
 				d3.select('.brush').classed('brush-disabled', true);
 				d3.select('#interaction-mode-text').text(automaticModeText);
 			}
@@ -368,45 +382,53 @@ function Main() {
 	var classCounters = {'0':blocksData.length, '1':0, '2':0};
 	d3.select('#class-counters')
 		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
+
 	keyActivated = false;
+	currentSymbol = undefined;
+
+	function onKeydown(event) {
+		if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
+		if (event.shiftKey === true) {
+			d3.select('#interaction-mode-button').on('mousedown')();
+			return;
+		}
+		if (event.which === 32) { // space
+			d3.select('#play-pause-ws-button').on('mousedown')();
+			return;
+		}
+		var newSymbol = keyToSymbol[event.which];
+		// console.log(keyActivated, currentSymbol, newSymbol);
+		if (newSymbol === currentSymbol && keyActivated === false) { return; }
+		if (newSymbol !== currentSymbol) {
+			currentSymbol = newSymbol;
+			keyActivated = false;
+		} else if (newSymbol === currentSymbol && keyActivated === true) {
+			currentSymbol = undefined;
+			keyActivated = false;
+			return;
+		} else if (newSymbol === currentSymbol && keyActivated === false) {
+			currentSymbol = newSymbol;
+		}
+		Update('keydown');
+	};
+
+	function onKeyup(event) {
+		keyActivated = true;
+		if (event.which !== 16) { // not shift
+			Update('keyup');
+		}
+	};
+
 	$(document)
-		.on('keydown', function(event) {
-			if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
-			if (event.shiftKey === true) {
-				d3.select('#interaction-mode-button').on('mousedown')();
-				return;
-			}
-			if (event.which === 32) { // space
-				d3.select('#play-pause-ws-button').on('mousedown')();
-				return;
-			}
-			var newSymbol = keyToSymbol[event.which];
-			// console.log(keyActivated, currentSymbol, newSymbol);
-			if (newSymbol === currentSymbol && keyActivated === false) { return; }
-			if (newSymbol !== currentSymbol) {
-				currentSymbol = newSymbol;
-				keyActivated = false;
-			} else if (newSymbol === currentSymbol && keyActivated === true) {
-				currentSymbol = undefined;
-				keyActivated = false;
-				return;
-			} else if (newSymbol === currentSymbol && keyActivated === false) {
-				currentSymbol = newSymbol;
-			}
-			Update('keydown');
-		})
-		.on('keyup', function(event) {
-			keyActivated = true;
-			if (event.which !== 16) { // not shift
-				Update('keyup');
-			}
-		});
+		.on('keydown', onKeydown)
+		.on('keyup', onKeyup);
 
 	requestAnimationFrame(function() {
-		Update();
+		Update('Main');
 	});
 
 	function Update(source) {
+		if (d3.select('body').classed('loaded') === false) { return; }
 		// console.log('Update '+source);
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		if (brushEnabled === true) {
@@ -414,19 +436,10 @@ function Main() {
 		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
-			d3.selectAll('.class-outline').classed('class1', false).classed('class2', false);
+			d3.selectAll('.class-outlined').call(classify, 0);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
-			switch (symbolToClass[currentSymbol]) {
-				case '1':
-					d3.selectAll('.class-outline').classed('class1', true).classed('class2', false);
-					break;
-				case '2':
-					d3.selectAll('.class-outline').classed('class1', false).classed('class2', true);
-					break;
-				default:
-					d3.selectAll('.class-outline').classed('class1', false).classed('class2', false);
-			}; 
+			d3.selectAll('.class-outlined').call(classify, symbolToClass[currentSymbol]);
 		}
 		if (brushEnabled === false) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
@@ -470,8 +483,8 @@ function Main() {
 	    	addKeyValuePairs(wavesurfer.backend, 'wavesurfer.backend', 0);
 	    	addKeyValuePairs(wavesurfer, 'wavesurfer', 0);
 	    	var metadata = {
-	    		songURL:songURL,
-	    		songDurationSec:wavesurfer.getDuration(),
+	    		trackURL:trackURL,
+	    		trackDurationSec:wavesurfer.getDuration(),
 	    		blocksPerSec:blocksPerSec,
 	    		classCounters:classCounters,
 	    		startTime:startTime,
@@ -555,8 +568,8 @@ function Main() {
 		exportTime = new Date().getTime();
 		exportedData = {};
 		exportedData.metadata = {
-			songURL:songURL,
-			songDurationSec:wavesurfer.getDuration(),
+			trackURL:trackURL,
+			trackDurationSec:wavesurfer.getDuration(),
 			blocksPerSec:blocksPerSec,
 			classCounters:classCounters,
 			startTime:startTime,
@@ -669,3 +682,20 @@ wavesurferOpts = {
     autoCenter: !0
 },
 */
+
+function classify(selection, classNumber) {
+	classNumber = (classNumber !== undefined) ? classNumber : 0;
+	for (var i=0; i<=2; i++) {
+		selection.classed('class'+i, false)	;
+	}
+	selection.classed('class'+classNumber, true);
+	return selection;
+};
+
+function setLoadedClass(state) {
+	if (state === 'loaded') {
+		d3.select('body').classed('loaded', true);
+	} else if (state === 'unloaded') {
+		d3.select('body').classed('loaded', false);
+	}
+}

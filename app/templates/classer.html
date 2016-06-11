@@ -8,30 +8,28 @@
 
 <div class='block'>
 	<div class='row'>
-		<input type='file' id='song-input'></input>
-		<div class='left'><button class='medium' id='load-song-button'>Load Song</button></div>
-		<div class='flex'><div class='expanded border-cell' id='song-url-value'>Click to choose a song</div></div>
-	</div>
-	<div class='row'>	
-		<div class='left'><button class='medium' id='defaults-button'>Defaults</button></div>
+		<div class='left'><button class='medium outlined' id='track-load-button'>Load Track</button></div>
+		<div class='right'><button class='medium outlined' id='track-clear-button'>Clear Track</button></div>
+		<div class='flex'><span class='expanded outlined' id='track-url-value'></span></div>
+		<input class='hidden' id='track-input' type='file'></input>
 	</div>
 </div>
-<div class='block'>
+<div class='block hide-if-loaded'>
 	<div class='row'>
-		<div class='left' id='song-title'></div>
+		<div class='center'><span id='loading-value'></span></div>
 	</div>
 </div>
-<div class='unloaded' id='wavesurfer-container'></div>
-<div class='block unloaded'>
+<div class='show-if-loaded' id='wavesurfer-container'></div>
+<div class='block show-if-loaded'>
 	<div class='row'>
-		<div class='left'><button class='medium' id='play-pause-ws-button'>Play Track</button><span id='current-time'>0.0s</span></div>
-		<div class='right'><button class='medium' id='reset-ws-button'>Reset Song</button></div>
+		<div class='left'><button class='medium outlined' id='play-pause-ws-button'>Play</button><span id='current-time'>0.0s</span></div>
+		<div class='right'><button class='medium outlined' id='reset-ws-button'>Stop</button></div>
 	</div>
 	<div class='row'>
-		<div class='left'><button class='medium' id='interaction-mode-button'>Toggle Mode</button><span id='interaction-mode-text'></span></div>
+		<div class='left'><button class='medium outlined' id='interaction-mode-button'>Toggle Mode</button><span id='interaction-mode-text'></span></div>
 	</div>
 	<div class='row'>
-		<div class='left class-outline' id='key-row'>Key Pressed: <span id='key-pressed'>&nbsp</span></div>
+		<div class='center class-outlined class0' id='key-row'>Key Pressed: <span id='key-pressed'>&nbsp</span></div>
 	</div>
 	<div class='row settings'>
 		<div class='left'>Zoom Level: x<span id='zoom-value'>2.0</span></div>
@@ -42,20 +40,25 @@
 		<div class='flex'><input class='expanded' id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' /></div>
 	</div>
 	<div class='row settings'>
-		<div class='left' ><span class='class-text class1'>Class 1</span> is key: <span id='class1-label'>Z</span><button id='class1-submit'>Change to:</button><input type='form' id='class1-form' size='1' maxlength='1' value=''></input></div>
-		<div class='right'><span class='class-text class2'>Class 2</span> is key: <span id='class2-label'>X</span><button id='class2-submit'>Change to:</button><input type='form' id='class2-form' size='1' maxlength='1' value=''></input></div>
+		<div class='left'><span class='class-text class1'>Class 1</span> is key: <span id='class1-label'>Z</span></div>
+		<div class='left'><button class='medium outlined' id='class1-submit'>Change to:</button><input class='small outlined' id='class1-form' type='form' size='1' maxlength='1' value=''></input></div>
+	</div>
+	<div class='row settings'>
+		<div class='left'><span class='class-text class2'>Class 2</span> is key: <span id='class2-label'>X</span></div>
+		<div class='left'><button class='medium outlined' id='class2-submit'>Change to:</button><input class='small outlined' id='class2-form' type='form' size='1' maxlength='1' value=''></input></div>
 	</div>
 	<div class='row'>
 		<div class='left'>Class Counters: <span id='class-counters'></span></div>
 	</div>
 	<div class='row'>
-		<div class='left'><button class='medium' id='export-data-button'>Export Data</button></div>
+		<div class='left'><button class='medium outlined' id='export-data-button'>Export Data</button></div>
 	</div>
 </div>
 <div class='block debug' id='wavesurfer-debug'></div>
 
 </body>
-<script type='text/javascript' src='../static/js/d3.v3.min.js'></script>
+<!-- <script type='text/javascript' src='../static/js/d3.v3.min.js'></script> -->
+<script type='text/javascript' src='../static/js/d3.v3.js'></script>
 <script type='text/javascript' src='../static/js/jquery.min.js'></script>
 <!-- <script type='text/javascript' src='../static/js/wavesurfer.min.js'></script> -->
 <script type='text/javascript' src='../static/js/unminified_wavesurfer.js'></script>
