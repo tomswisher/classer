@@ -393,6 +393,7 @@ function Main() {
 			return;
 		}
 		if (event.which === 32) { // space
+			event.preventDefault(); // disable normal key events outside of settings
 			d3.select('#play-pause-ws-button').on('mousedown')();
 			return;
 		}

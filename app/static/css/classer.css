@@ -51,6 +51,7 @@ button {
 }
 input[type="form"] {
   border: none;
+  text-align: center;
 }
 .expanded {
   -webkit-flex: 1;
