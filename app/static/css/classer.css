@@ -1,7 +1,20 @@
 body {
-  font-size: 16px;
-  font-family: "Courier New", Courier, monospace;
   margin-top: 20px;
+}
+button {
+  cursor: pointer;
+}
+input[type="form"] {
+  text-align: center;
+}
+body,
+button,
+input[type="form"] {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+.inline-block {
+  display: inline-block;
 }
 .row {
   height: 30px;
@@ -22,8 +35,7 @@ body {
   float: left;
   margin-right: 15px;
 }
-.left button,
-.left input {
+.left * {
   margin-right: 15px;
 }
 .left *:last-child {
@@ -41,17 +53,14 @@ body {
   margin: 0 auto;
   text-align: center;
 }
+.center * {
+  margin-right: 10px;
+}
+.center *:first-child {
+  margin-left: 10px;
+}
 .flex {
   display: -webkit-flex;
-}
-button {
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-input[type="form"] {
-  border: none;
-  text-align: center;
 }
 .expanded {
   -webkit-flex: 1;
@@ -66,6 +75,7 @@ span.expanded {
 }
 .outlined,
 .class-outlined {
+  border: none;
   outline-style: solid;
   outline-width: 1px;
 }
@@ -163,6 +173,10 @@ body:not(.loaded) > *.hide-if-loaded {
 .hidden {
   display: none;
 }
+.tiny {
+  width: 20px;
+  height: 30px;
+}
 .small {
   width: 30px;
   height: 30px;
@@ -190,6 +204,9 @@ body:not(.loaded) > *.hide-if-loaded {
   pointer-events: none;
 }
 #key-pressed {
-  width: 20px;
   text-align: center;
+}
+#class1-form,
+#class2-form {
+  text-transform: uppercase;
 }

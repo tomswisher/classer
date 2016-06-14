@@ -9,7 +9,7 @@ var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3'
 var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
 var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
-var symbolToClass = {}, currentSymbol, keyActivated;
+var symbolToClass, classToName, currentSymbol, keyActivated;
 var keyToSymbol = {
 	// 32:' ',
 	48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
@@ -309,11 +309,6 @@ function Main() {
 			// console.log('brushEnabled = '+brushEnabled);
 		});
 
-	d3.select('#export-data-button')
-		.on('mousedown', function() {
-			ExportData();
-		});
-
     var playbackSpeed = 1.0;
     d3.select('#speed-slider')
         .on('change', function() {
@@ -357,25 +352,56 @@ function Main() {
 		});
 
 	symbolToClass = {};
-	d3.selectAll('#class1-label, #class1-submit').datum({class:'1'});
-	d3.selectAll('#class2-label, #class2-submit').datum({class:'2'});
-	d3.selectAll('#class1-label, #class2-label')
+	classToName = {};
+	// d3.selectAll('#class1-label, #class1-submit').datum({class:'1'});
+	// d3.selectAll('#class2-label, #class2-submit').datum({class:'2'});
+	// d3.selectAll('#class1-label, #class2-label')
+	// 	.each(function(d) {
+	// 		symbolToClass[this.textContent] = d.class;
+	// 	});
+	// d3.selectAll('#class1-submit, #class2-submit')
+	// 	.on('mousedown', function(d) {
+	// 		var classOther = (d.class === '1') ? '2' : '1';
+	// 		var oldValueOther = d3.select('#class'+classOther+'-label').text();
+	// 		var oldValue = d3.select('#class'+d.class+'-label').text();
+	// 		var newValue = d3.select('#class'+d.class+'-form').node().value.toUpperCase();
+	// 		d3.select('#class'+d.class+'-form').node().value = '';
+	// 		if (newValue === oldValueOther) { return; }
+	// 		if (letterArray.indexOf(newValue) !== -1 || numberArray.indexOf(newValue) !== -1) {
+	// 			delete(symbolToClass[oldValue]);
+	// 			symbolToClass[newValue] = d.class;
+	// 			d3.select('#class'+d.class+'-label').text(newValue);
+	// 		}
+	// 	});
+
+	d3.select('#class1-name-form').datum({'class':1});
+	d3.select('#class2-name-form').datum({'class':2});
+	d3.selectAll('#class1-name-form, #class2-name-form')
 		.each(function(d) {
-			symbolToClass[this.textContent] = d.class;
+			classToName[d.class] = this.value;
+		})
+		.on('change', function(d) {
+			classToName[d.class] = this.value;
 		});
-	d3.selectAll('#class1-submit, #class2-submit')
-		.on('mousedown', function(d) {
-			var classOther = (d.class === '1') ? '2' : '1';
-			var oldValueOther = d3.select('#class'+classOther+'-label').text();
-			var oldValue = d3.select('#class'+d.class+'-label').text();
-			var newValue = d3.select('#class'+d.class+'-form').node().value.toUpperCase();
-			d3.select('#class'+d.class+'-form').node().value = '';
-			if (newValue === oldValueOther) { return; }
-			if (letterArray.indexOf(newValue) !== -1 || numberArray.indexOf(newValue) !== -1) {
-				delete(symbolToClass[oldValue]);
-				symbolToClass[newValue] = d.class;
-				d3.select('#class'+d.class+'-label').text(newValue);
-			}
+
+	d3.select('#class1-form').datum({'class':1});
+	d3.select('#class2-form').datum({'class':2});
+	d3.selectAll('#class1-form, #class2-form')
+		.each(function(d) {
+			var newValue = this.value.toUpperCase();
+			symbolToClass[newValue] = d.class;
+			d.oldValue = newValue;
+		})
+		.on('change', function(d) {
+			delete(symbolToClass[d.oldValue]);
+			var newValue = this.value.toUpperCase();
+			symbolToClass[newValue] = d.class;
+			d.oldValue = newValue;
+		});
+
+	d3.select('#export-data-button')
+		.on('mousedown', function() {
+			ExportData();
 		});
 
 	var classHistoryData = [], currentString = '';
@@ -437,10 +463,10 @@ function Main() {
 		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
-			d3.selectAll('.class-outlined').call(classify, 0);
+			d3.selectAll('#key-color').call(classify, 0);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
-			d3.selectAll('.class-outlined').call(classify, symbolToClass[currentSymbol]);
+			d3.selectAll('#key-color').call(classify, symbolToClass[currentSymbol]);
 		}
 		if (brushEnabled === false) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
@@ -569,29 +595,30 @@ function Main() {
 		exportTime = new Date().getTime();
 		exportedData = {};
 		exportedData.metadata = {
-			trackURL:trackURL,
-			trackDurationSec:wavesurfer.getDuration(),
-			blocksPerSec:blocksPerSec,
-			classCounters:classCounters,
-			startTime:startTime,
-			exportTime:exportTime,
-			elapsedSec:(exportTime-startTime)/1000,
-			class1Key:d3.select('#class1-label').text(),
-			class2Key:d3.select('#class2-label').text(),
-			zoomValue:zoomValue,
-			playbackSpeed:playbackSpeed,
+			trackURL: trackURL,
+			trackDurationSec: wavesurfer.getDuration(),
+			blocksPerSec: blocksPerSec,
+			classCounters: classCounters,
+			startTime: startTime,
+			exportTime: exportTime,
+			elapsedSec: (exportTime-startTime)/1000,
+			symbolToClass:  symbolToClass,
+			classToName: classToName,
+			zoomValue: zoomValue,
+			playbackSpeed: playbackSpeed,
 		};
 		exportedData.blocksData = blocksData;
-		console.log(exportedData);
+		console.log(exportedData.metadata);
+		console.log(exportedData.blocksData);
 		$.ajax({
 			type: 'POST',
 			url: 'exportedData',
+			dataType: 'json',
 			data: JSON.stringify(exportedData),
             async: false,
 			success: function() {
                 console.log('success');
             },
-			dataType: 'json',
 		});
 	};
 }
