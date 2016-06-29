@@ -5,7 +5,7 @@ var logs = 0;
 var debug = 0;
 if (debug) { d3.selectAll('.debug').classed('debug', false); }
 var trackPromptText = 'Click to choose a track';
-var defaultSongURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
+var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 var brushEnabled = false;
 var exportedData, blocksData, blocksPerSec = 10, startTime, exportTime;
 var oldTime = 0, oldSecondsFloat = 0, secondsFloat = 0;
@@ -47,7 +47,7 @@ var wavesurferOpts = {
 }
 var trackURL;
 if (sessionStorage.trackURL === undefined) {
-	trackURL = defaultSongURL;
+	trackURL = defaultTrackURL;
 	sessionStorage.setItem('trackURL', trackURL);
 } else {
 	trackURL = sessionStorage.trackURL;
@@ -71,10 +71,9 @@ function InitWaveSurfer() {
 		d3.select('#loading-value').text('');
 		Main();
 	});
-
 	d3.select('#loading-value').text('');
 	d3.select('#track-url-value')
-		.text((trackURL !== defaultSongURL) ? trackURL : trackPromptText)
+		.text((trackURL !== defaultTrackURL) ? trackURL : trackPromptText)
 		.on('click', function() {
 			d3.select('#track-input').node().click();
 		});
@@ -98,8 +97,8 @@ function InitWaveSurfer() {
 		});
 	d3.select('#track-clear-button')
 		.on('click', function() {
-			trackURL = defaultSongURL;
-			sessionStorage.setItem('trackURL', defaultSongURL);
+			trackURL = defaultTrackURL;
+			sessionStorage.setItem('trackURL', defaultTrackURL);
 			d3.select('#track-url-value').text(trackPromptText);
 			setLoadedClass('unloaded');
 			$(document).off();
@@ -473,78 +472,78 @@ function Main() {
 	        var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
 	        ChangeBlockAtIndex(blocksIndex, newClassNumber);
 	    }
-	    if (debug) {
-	    	var keyValueArray = [];
-	    	var usedKeyHash = {};
-	    	var valueString;
-	    	var testRegExp = new RegExp('^get');
-	    	var skippedKeysHash = {
-	    		'wavesurfer.backend': ['gainNode', 'getAudioContext', 'getOfflineAudioContext', 'handlers'],
-	    		'wavesurfer': ['backend', 'defaultParams', 'drawer', 'Drawer', 'getArrayBuffer', 'handlers', 'WebAudio']
-	    	};
-	    	var indentString;
-	    	function addKeyValuePairs(myObject, keyText, indent) {
-	    		var indentString = Array(indent).join('    ');
-	    		var skippedKeys = (skippedKeysHash[keyText] !== undefined) ? skippedKeysHash[keyText] : [];
-	    		// if (logs) console.log('Looping over key '+keyText+'" skipping:', skippedKeys);
-	    		$.each(myObject, function(key, value) {
-	    			// if (logs) console.log(indentString+'"'+key+'", '+typeof(value));
-	    			if (skippedKeys.indexOf(key) !== -1) { return; }
-	    			if (usedKeyHash[key] !== undefined) { return; }
-	    			if (typeof(value) === 'function' && testRegExp.test(key) === true) {
-	    				// if (logs) console.log(indentString, value, myObject);
-	    				valueString = JSON.stringify(value.apply(myObject));
-	    			} else {
-	    				valueString = JSON.stringify(value);
-	    			}
-	    			if ([undefined, '{}'].indexOf(valueString) !== -1) { return; }
-	    			if (typeof(value) === 'object' && value !== null) {
-	    				// if (logs) console.log(indentString+'Stepping in to  "'+key+'" from "'+keyText+'" skipping:', skippedKeys);
-	    				addKeyValuePairs(value, key, indent+1);
-	    			} else {
-	    				usedKeyHash[key] = valueString;
-	    			}
-	    		});
-	    		// if (logs) console.log(indentString+'Done looping for "'+keyText+'"\n\n');
-	    	};
-	    	addKeyValuePairs(wavesurfer.backend, 'wavesurfer.backend', 0);
-	    	addKeyValuePairs(wavesurfer, 'wavesurfer', 0);
-	    	var metadata = {
-	    		trackURL:trackURL,
-	    		trackDurationSec:wavesurfer.getDuration(),
-	    		blocksPerSec:blocksPerSec,
-	    		classCounters:classCounters,
-	    		startTime:startTime,
-	    		exportTime:exportTime,
-	    		elapsedSec:(exportTime-startTime)/1000,
-	    		class1Key:d3.select('#class1-label').text(),
-	    		class2Key:d3.select('#class2-label').text(),
-	    		zoomValue:zoomValue,
-	    		playbackSpeed:playbackSpeed,
-	    	};
-	    	addKeyValuePairs(metadata, 'metadata', 0);
+	    // if (debug) {
+	    // 	var keyValueArray = [];
+	    // 	var usedKeyHash = {};
+	    // 	var valueString;
+	    // 	var testRegExp = new RegExp('^get');
+	    // 	var skippedKeysHash = {
+	    // 		'wavesurfer.backend': ['gainNode', 'getAudioContext', 'getOfflineAudioContext', 'handlers'],
+	    // 		'wavesurfer': ['backend', 'defaultParams', 'drawer', 'Drawer', 'getArrayBuffer', 'handlers', 'WebAudio']
+	    // 	};
+	    // 	var indentString;
+	    // 	function addKeyValuePairs(myObject, keyText, indent) {
+	    // 		var indentString = Array(indent).join('    ');
+	    // 		var skippedKeys = (skippedKeysHash[keyText] !== undefined) ? skippedKeysHash[keyText] : [];
+	    // 		// if (logs) console.log('Looping over key '+keyText+'" skipping:', skippedKeys);
+	    // 		$.each(myObject, function(key, value) {
+	    // 			// if (logs) console.log(indentString+'"'+key+'", '+typeof(value));
+	    // 			if (skippedKeys.indexOf(key) !== -1) { return; }
+	    // 			if (usedKeyHash[key] !== undefined) { return; }
+	    // 			if (typeof(value) === 'function' && testRegExp.test(key) === true) {
+	    // 				// if (logs) console.log(indentString, value, myObject);
+	    // 				valueString = JSON.stringify(value.apply(myObject));
+	    // 			} else {
+	    // 				valueString = JSON.stringify(value);
+	    // 			}
+	    // 			if ([undefined, '{}'].indexOf(valueString) !== -1) { return; }
+	    // 			if (typeof(value) === 'object' && value !== null) {
+	    // 				// if (logs) console.log(indentString+'Stepping in to  "'+key+'" from "'+keyText+'" skipping:', skippedKeys);
+	    // 				addKeyValuePairs(value, key, indent+1);
+	    // 			} else {
+	    // 				usedKeyHash[key] = valueString;
+	    // 			}
+	    // 		});
+	    // 		// if (logs) console.log(indentString+'Done looping for "'+keyText+'"\n\n');
+	    // 	};
+	    // 	addKeyValuePairs(wavesurfer.backend, 'wavesurfer.backend', 0);
+	    // 	addKeyValuePairs(wavesurfer, 'wavesurfer', 0);
+	    // 	var metadata = {
+	    // 		trackURL:trackURL,
+	    // 		trackDurationSec:wavesurfer.getDuration(),
+	    // 		blocksPerSec:blocksPerSec,
+	    // 		classCounters:classCounters,
+	    // 		startTime:startTime,
+	    // 		exportTime:exportTime,
+	    // 		elapsedSec:(exportTime-startTime)/1000,
+	    // 		class1Key:d3.select('#class1-label').text(),
+	    // 		class2Key:d3.select('#class2-label').text(),
+	    // 		zoomValue:zoomValue,
+	    // 		playbackSpeed:playbackSpeed,
+	    // 	};
+	    // 	addKeyValuePairs(metadata, 'metadata', 0);
 
-	    	$.each(usedKeyHash, function(key, value) {
-	    		keyValueArray.push({ 'key':key, 'value':value });
-	    	});
+	    // 	$.each(usedKeyHash, function(key, value) {
+	    // 		keyValueArray.push({ 'key':key, 'value':value });
+	    // 	});
 
-	    	var rows = d3.select('#wavesurfer-debug').selectAll('div.plain-text').data(keyValueArray);
-	    	rows.exit().remove();
-	    	rows.enter().append('div').attr('class', 'plain-text').each(function(d) {
-    			d3.select(this).append('span').attr('class', 'key-text');
-    			d3.select(this).append('span').attr('class', 'value-text');
-    		});
-	    	rows.each(function(d) {
-	    		var oldValue = d3.select(this).selectAll('span.value-text').attr('old-value');
-	    		if (String(d.value) !== String(oldValue)) {
-	    			d3.select(this).selectAll('span').interrupt()
-	    				.style('color', 'red').transition().duration(1000).style('color', 'black');
-	    		}
-    			d3.select(this).selectAll('span.key-text').text(d.key);
-    			d3.select(this).selectAll('span.value-text').text(d.value);
-    			d3.select(this).selectAll('span.value-text').attr('old-value', d.value);
-    		});
-	    }
+	    // 	var rows = d3.select('#wavesurfer-debug').selectAll('div.plain-text').data(keyValueArray);
+	    // 	rows.exit().remove();
+	    // 	rows.enter().append('div').attr('class', 'plain-text').each(function(d) {
+    	// 		d3.select(this).append('span').attr('class', 'key-text');
+    	// 		d3.select(this).append('span').attr('class', 'value-text');
+    	// 	});
+	    // 	rows.each(function(d) {
+	    // 		var oldValue = d3.select(this).selectAll('span.value-text').attr('old-value');
+	    // 		if (String(d.value) !== String(oldValue)) {
+	    // 			d3.select(this).selectAll('span').interrupt()
+	    // 				.style('color', 'red').transition().duration(1000).style('color', 'black');
+	    // 		}
+    	// 		d3.select(this).selectAll('span.key-text').text(d.key);
+    	// 		d3.select(this).selectAll('span.value-text').text(d.value);
+    	// 		d3.select(this).selectAll('span.value-text').attr('old-value', d.value);
+    	// 	});
+	    // }
 	};
 
 	function ChangeBlockAtIndex(blocksIndex, newClassNumber) {
