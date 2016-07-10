@@ -132,9 +132,6 @@ span.expanded {
 .class-text.class2 {
   color: orange;
 }
-.plain-text {
-  margin-bottom: 15px;
-}
 .plain-text span {
   margin-right: 20px;
 }
@@ -147,11 +144,6 @@ body.loaded > *.hide-if-loaded {
 body.loaded > *.show-if-loaded,
 body:not(.loaded) > *.hide-if-loaded {
   opacity: 1;
-  -webkit-transition: opacity 0.5s ease-in;
-  -moz-transition: opacity 0.5s ease-in;
-  -ms-transition: opacity 0.5s ease-in;
-  -o-transition: opacity 0.5s ease-in;
-  transition: opacity 0.5s ease-in;
 }
 .disabled {
   position: relative;
@@ -192,12 +184,17 @@ body:not(.loaded) > *.hide-if-loaded {
 #track-url-value {
   cursor: pointer;
 }
+#svg-container {
+  margin-bottom: 10px;
+}
 #wavesurfer-container {
-  margin-bottom: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 #wavesurfer-container > *,
 .block {
   min-width: 480px;
+  max-width: 610px;
 }
 #wavesurfer-container.brush-enabled wave wave,
 #wavesurfer-container.brush-enabled wave canvas {

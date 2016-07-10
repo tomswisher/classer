@@ -20,21 +20,24 @@
 	</div>
 </div>
 <div class='show-if-loaded' id='wavesurfer-container'></div>
+<div class='show-if-loaded' id='svg-container'>
+	<svg><g></g></svg>
+</div>
 <div class='block show-if-loaded'>
 	<div class='row'>
 		<div class='left'><button class='medium outlined' id='play-pause-ws-button'>Play</button><span id='current-time'>0.0s</span></div>
 		<div class='right'><button class='medium outlined' id='reset-ws-button'>Stop</button></div>
 	</div>
-	<div class='row'>
+	<!-- <div class='row'>
 		<div class='left'><button class='medium outlined' id='interaction-mode-button'>Toggle Mode</button><span id='interaction-mode-text'></span></div>
-	</div>
+	</div> -->
 	<div class='row'>
 		<div class='center class-outlined class0' id='key-color'><div class='inline-block'>Key Pressed:</div><div class='tiny inline-block' id='key-pressed'></div></div>
 	</div>
-	<div class='row settings'>
+	<!-- <div class='row settings'>
 		<div class='left'>Zoom Level: x<span id='zoom-value'>2.0</span></div>
 		<div class='flex'><input class='expanded' id='zoom-slider' type='range' min='1' max='10' step='0.1' value='2.0' /></div>
-	</div>
+	</div> -->
 	<div class='row settings'>
 		<div class='left'>Playback Speed: x<span id='speed-value'>1.0</span></div>
 		<div class='flex'><input class='expanded' id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' /></div>
@@ -59,6 +62,6 @@
 <script type='text/javascript' src='../static/js/d3.v3.js'></script>
 <script type='text/javascript' src='../static/js/jquery.min.js'></script>
 <!-- <script type='text/javascript' src='../static/js/wavesurfer.min.js'></script> -->
-<script type='text/javascript' src='../static/js/unminified_wavesurfer.js'></script>
+<script type='text/javascript' src='../static/js/modified_wavesurfer_raw.js'></script>
 <script type='text/javascript' src='../static/js/classer.js'></script>
 </html>
