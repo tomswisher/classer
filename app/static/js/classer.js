@@ -3,10 +3,12 @@
 // Settings
 var logs = false;
 var debug = false;
+var numClasses = 2;
 var minPxPerSec = 20;
-var secondsHeight = 20;
+var labelsHeight = 20;
 var blocksHeight = 50;
 var blocksPerSec = 10;
+var playbackSpeed = 1.0;
 var wsOpts = {
     height        : 128,
     // waveColor     : 'black', //'#999',
@@ -34,16 +36,15 @@ var wsOpts = {
     // mediaType     : 'audio',
     // autoCenter    : true,
 };
-var numClasses = 2;
 var wavesurfer;
 var trackPromptText = 'Click to choose a track';
 // var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 // var defaultTrackURL = '08 Smashed Pennies.m4a';
 var defaultTrackURL = '08_smashed_pennies_(m4a)_0.wav';
-var brushEnabled = false;
-var exportedData, blocksData, secondsData;
+var exportedData, blocksData, brushes, brushNodes, blocksRects, labelsData;
 var startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
-var currentClass, currentSymbol, keyActivated;
+var currentGroupIndex, currentBrushExtent;
+var currentSymbol, keyActivated, isBrushing;
 var symbolToClass, classToName;
 // var zoomValue;
 var keyToSymbol = {
@@ -62,12 +63,9 @@ if (sessionStorage.trackURL === undefined) {
 	trackURL = sessionStorage.trackURL;
 }
 if (debug) { d3.selectAll('.debug').classed('debug', false); }
-InitWaveSurfer();
+ReInitWaveSurfer();
 
-function InitWaveSurfer() {
-	oldTime = 0;
-	oldSecondsFloat = 0;
-	secondsFloat = 0;
+function ReInitWaveSurfer() {
 	wavesurfer = WaveSurfer.create(wsOpts);
 	// d3.select('#wavesurfer-container')
 	wavesurfer.on('loading', function(a) {
@@ -104,7 +102,7 @@ function InitWaveSurfer() {
 			wavesurfer.destroy();
 			d3.select('#wavesurfer-container svg').remove();
 			requestAnimationFrame(function() {
-				InitWaveSurfer();
+				ReInitWaveSurfer();
 				d3.select('#track-url-value').text(trackURL);
 				// assumes you put audio in folder /static/audio
 				wavesurfer.load('../static/audio/'+trackURL);
@@ -119,12 +117,18 @@ function InitWaveSurfer() {
 			$(document).off();
 			wavesurfer.destroy();
 			requestAnimationFrame(function() {
-				InitWaveSurfer();
+				ReInitWaveSurfer();
 			});
 		});
 };
 
 function Main() {
+	oldTime = 0;
+	oldSecondsFloat = 0;
+	secondsFloat = 0;
+	currentGroupIndex = 0;
+	symbolToClass = {};
+	classToName = {};
 	// var wsZoomScale = d3.scale.linear()
 	// 	.domain([1,2])
 	// 	.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
@@ -138,86 +142,111 @@ function Main() {
 	var waveNode = d3.select('#wavesurfer-container').select('wave')
 		.style('width', waveformWidth+'px')
 		.style('height', wsOpts.height+'px');
+	
 	var svg = d3.select('#svg-container svg')
 		.attr('width', waveformWidth+10*2)
-		.attr('height', secondsHeight+2*blocksHeight)
+		.attr('height', labelsHeight+2*blocksHeight)
 		.select('g')
 			.attr('transform', 'translate(10,0)');
 	svg.selectAll('*').remove();
 	
-	secondsData = d3.range(numSeconds+1);
-	var secondLabels = svg.selectAll('text.label').data(secondsData);
+	labelsData = d3.range(numSeconds+1);
+	var secondLabels = svg.selectAll('text.label').data(labelsData);
 	secondLabels.enter().append('text')
 		.classed('label', true)
 		.attr('x', function(d) { return d*minPxPerSec; })
-		.attr('y', 0.5*secondsHeight)
+		.attr('y', 0.5*labelsHeight)
 		.text(function(d) { return d; });
 		// .text(function(d) { return (d === 0) ? '' : d; });
 
-	var blocksRoot = svg.append('g')
-		.classed('blocks-origin', true)
-		.attr('transform', 'translate(0,'+secondsHeight+')');
-
-	blocksData = d3.range(numSeconds*blocksPerSec)
-		.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
-	var blockRects = blocksRoot.selectAll('rect.block-rect').data(blocksData);
-	blockRects.enter().append('rect')
-		.attr('class', function(d) { return 'block-rect class'+d.class; })
-		.attr('x', function(d,i) { return i*minPxPerSec/blocksPerSec; })
-		.attr('y', 0)
-		.attr('width', minPxPerSec/blocksPerSec)
-		.attr('height', blocksHeight);
+	blocksData = [];
+	for (var groupIndex=0; groupIndex<numClasses; groupIndex++) {
+		blocksData[groupIndex] = d3.range(numSeconds*blocksPerSec)
+			.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
+	}
 
 	var xScale = d3.scale.linear()
-		.domain([0, blocksData.length-1])
+		.domain([0, blocksData[0].length-1])
 		.range([0, waveformWidth]);
 
-	var isBrushing = false;
-	var brushes = [], brushNodes = [], oldExtents = [];
-	for (var i=0; i<numClasses; i++) {
-		(function(i) {
-			oldExtents[i] = [0,0];
-			brushes[i] = d3.svg.brush()
+	isBrushing = false;
+	brushes = [];
+	brushNodes = [];
+	var oldExtents = [];
+
+	blocksRects = [];
+	var blocksRoots = svg.selectAll('g.blocks-origin').data(blocksData).enter().append('g')
+		.classed('blocks-origin', true)
+		.attr('transform', function(d,i) { return 'translate(0,'+(labelsHeight+i*blocksHeight)+')'; })
+		.each(function(d,groupIndex) {
+			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d);
+			blocksRects[groupIndex].enter().append('rect')
+				.attr('class', function(d) { return 'block class'+d.class; })
+				.attr('x', function(d,i) { return i*minPxPerSec/blocksPerSec; })
+				.attr('y', 0)
+				.attr('width', minPxPerSec/blocksPerSec)
+				.attr('height', blocksHeight);
+			oldExtents[groupIndex] = [0,0];
+			brushes[groupIndex] = d3.svg.brush()
 				.x(xScale)
 				.on('brushstart', function() {
-					console.log(i);
-					oldExtents[i] = [brushes[i].extent()[0], brushes[i].extent()[1]];
-					// console.log('brushstart', oldExtents[i], brushes[i].extent());
+					if (logs) console.log(i);
+					oldExtents[groupIndex] = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];
+					// if (logs) console.log('brushstart', oldExtents[groupIndex], brushes[groupIndex].extent());
 				})
 				.on('brush', function() {
-					snapBrush(i);
-					// console.log('brush     ', oldExtents[i], brushes[i].extent());
+					snapBrush(groupIndex);
+					// if (logs) console.log('brush     ', oldExtents[groupIndex], brushes[groupIndex].extent());
 					if (isBrushing === false) {
-						var ext = [brushes[i].extent()[0], brushes[i].extent()[1]];
-						if (ext[0] !== oldExtents[i][0] && ext[1] !== oldExtents[i][1] && ext[1]-ext[0] !== oldExtents[i][1]-oldExtents[i][0]) {
-							// console.log('applyBrush');
-							applyBrush(oldExtents[i][0], oldExtents[i][1]);
+						var ext = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];
+						if (ext[0] !== oldExtents[groupIndex][0] 
+							&& ext[1] !== oldExtents[groupIndex][1] 
+							&& ext[1]-ext[0] !== oldExtents[groupIndex][1]-oldExtents[groupIndex][0]) {
+								// if (logs) console.log('applyBrush');
+								applyBrush(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1]);
 						}
 						isBrushing = true;
 					}
-					oldExtents[i] = [brushes[i].extent()[0], brushes[i].extent()[1]];
+					oldExtents[groupIndex] = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];
 				})
 				.on('brushend', function() {
-					// console.log('brushend  ', oldExtents[i], brushes[i].extent());
+					// if (logs) console.log('brushend  ', oldExtents[groupIndex], brushes[groupIndex].extent());
 					isBrushing = false;
-					// oldExtents[i] = [brushes[i].extent()[0], brushes[i].extent()[1]];
-					// if (brushes[i].extent()[0] !== oldExtents[i][0] && brushes[i].extent()[1] !== oldExtents[i][1]) {
+					// oldExtents[groupIndex] = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];
+					// if (brushes[groupIndex].extent()[0] !== oldExtents[groupIndex][0] && brushes[groupIndex].extent()[1] !== oldExtents[groupIndex][1]) {
 					// 	willApplyBrush = true;
 					// }
-					// var brushExtentDiff = brushes[i].extent()[1]-brushes[i].extent()[0];
+					// var brushExtentDiff = brushes[groupIndex].extent()[1]-brushes[groupIndex].extent()[0];
 					// if (brushExtentDiff > 1) {
-					// 	oldExtents[i] = [brushes[i].extent()[0], brushes[i].extent()[1]];	
+					// 	oldExtents[groupIndex] = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];	
 					// }
-					// console.log('brushend', brushes[i].extent(), oldExtents[i], brushExtentDiff);
+					// if (logs) console.log('brushend', brushes[groupIndex].extent(), oldExtents[groupIndex], brushExtentDiff);
 				});
-			brushNodes[i] = blocksRoot.append('g')
+			brushNodes[groupIndex] = d3.select(this).append('g')
 				.attr('class', 'brush')
-				.call(brushes[i]);
-			brushNodes[i].selectAll('rect')
+				// .attr('transform', 'translate(0,'+(labelsHeight+groupIndex*blocksHeight)+')')
+				.call(brushes[groupIndex]);
+			brushNodes[groupIndex].selectAll('rect')
 				.attr('y', 0)
 				.attr('height', blocksHeight-1);
-		})(i);
-	};
+			if (groupIndex === 0) {
+				currentBrushExtent = brushNodes[0].selectAll('rect.extent');
+			}
+			d3.select(this).append('rect')
+				.classed('group-guard', true)
+				.classed('current', (groupIndex===0))
+				.attr('x', 0)
+				.attr('y', 0)
+				.attr('width', waveformWidth)
+				.attr('height', blocksHeight-1)
+				.on('click', function() {
+					d3.selectAll('rect.group-guard').classed('current', false);
+					d3.select(this).classed('current', true);
+					currentGroupIndex = groupIndex;
+					currentBrushExtent = brushNodes[currentGroupIndex].selectAll('rect.extent');
+					clearBrushes();
+				});
+		});
 
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
@@ -240,29 +269,26 @@ function Main() {
 		// – When it finishes playing.
 		d3.select('#reset-ws-button').on('mousedown')();
 	});
-	wavesurfer.on('finish', function() {
-		// When it finishes playing.
-	});
 	// wavesurfer.on('zoom', function(minPxPerSec) {
 	// 	On zooming. Callback will receive (integer) minPxPerSec.
 	// });
 	// wavesurfer.on('error', function(a, b, c, d, e, f) {
 	// 	// Occurs on error. Callback will receive (string) error message.
-	// 	console.log('error');
-	// 	console.log(a, b, c, d, e, f);
+	// 	if (logs) console.log('error');
+	// 	if (logs) console.log(a, b, c, d, e, f);
 	// });
 	// wavesurfer.on('pause', function() {
 	// 	// When audio is paused.
-	// 	console.log('pause');
+	// 	if (logs) console.log('pause');
 	// });
 	// wavesurfer.on('play', function() {
 	// 	// When play starts.
-	// 	console.log('play');
+	// 	if (logs) console.log('play');
 	// });
 	// wavesurfer.on('scroll', function(scrollEvent) {
 	// 	// When the scrollbar is moved. Callback will receive a ScrollEvent object.
-	// 	console.log('scroll');
-	// 	console.log(scrollEvent);
+	// 	if (logs) console.log('scroll');
+	// 	if (logs) console.log(scrollEvent);
 	// });
 
 	d3.select('#play-pause-ws-button')
@@ -282,7 +308,7 @@ function Main() {
 			wavesurfer.seekTo(secondsFloat);
 			d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 			d3.select('wave').node().scrollLeft = 0;
-		})
+		});
 
 	// var manualModeText    = 'Manual (click + drag to add a class)';
 	// var automaticModeText = 'Automatic (click to jump in time)';
@@ -303,10 +329,9 @@ function Main() {
 	// 			d3.select('.brush').classed('brush-disabled', true);
 	// 			d3.select('#interaction-mode-text').text(automaticModeText);
 	// 		}
-	// 		// console.log('brushEnabled = '+brushEnabled);
+	// 		// if (logs) console.log('brushEnabled = '+brushEnabled);
 	// 	});
 
-    var playbackSpeed = 1.0;
     d3.select('#speed-slider')
         .on('change', function() {
         	clearBrushes();
@@ -327,7 +352,7 @@ function Main() {
 	// 		waveformWidth = Math.ceil(minPxPerSec*wavesurfer.getDuration());
 	// 		xScale.range([0, waveformWidth]);
 	// 		svg.attr('width', waveformWidth);
-	// 		blockRects
+	// 		blocksRects
 	// 			.attr('transform', function(d,i) {
 	// 				var xT = i*minPxPerSec/blocksPerSec;
 	// 				var yT = 0;
@@ -347,9 +372,6 @@ function Main() {
 	// 			});
  //            Update('zoom-sliderEnd');
 	// 	});
-
-	symbolToClass = {};
-	classToName = {};
 
 	d3.select('#class1-name-form').datum({'class':1});
 	d3.select('#class2-name-form').datum({'class':2});
@@ -378,16 +400,24 @@ function Main() {
 
 	d3.select('#export-data-button')
 		.on('mousedown', function() {
-			ExportData();
+			exportData();
 		});
 
 	var classHistoryData = [], currentString = '';
-	var classCounters = {'0':blocksData.length, '1':0, '2':0};
+	var classCounters = {'0':blocksData[0].length, '1':0, '2':0};
 	d3.select('#class-counters')
 		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
 
 	keyActivated = false;
 	currentSymbol = undefined;
+
+	$(document)
+		.on('keydown', onKeydown)
+		.on('keyup', onKeyup);
+
+	requestAnimationFrame(function() {
+		Update();
+	});
 
 	function onKeydown(event) {
 		if (d3.select(document.activeElement.parentElement).classed('settings') === true) { return; }
@@ -401,7 +431,7 @@ function Main() {
 			return;
 		}
 		var newSymbol = keyToSymbol[event.which];
-		// console.log(keyActivated, currentSymbol, newSymbol);
+		// if (logs) console.log(keyActivated, currentSymbol, newSymbol);
 		if (newSymbol === currentSymbol && keyActivated === false) { return; }
 		if (newSymbol !== currentSymbol) {
 			currentSymbol = newSymbol;
@@ -423,33 +453,25 @@ function Main() {
 		}
 	};
 
-	$(document)
-		.on('keydown', onKeydown)
-		.on('keyup', onKeyup);
-
-	requestAnimationFrame(function() {
-		Update('Main');
-	});
-
-	function ChangeBlockAtIndex(blocksIndex, newClassNumber) {
-		var block = d3.select(blockRects[0][blocksIndex]);
+	function changeBlock(groupIndex, blocksIndex, newClassNumber) {
+		var block = d3.select(blocksRects[groupIndex][0][blocksIndex]);
         var oldClassNumber = block.datum()['class'];
-        blocksData[blocksIndex].class = newClassNumber;
+        blocksData[groupIndex][blocksIndex].class = newClassNumber;
 		block
 			.datum({'class':newClassNumber})
-			.attr('class', function(d) { return 'block-rect class'+d.class; })
-			.attr('y', function(d,i) { return (parseInt(newClassNumber) === 2) ? blocksHeight : 0; });
-		// console.log(secondsFloat+'\t'+source);
+			.attr('class', function(d) { return 'block class'+d.class; });
+			// .attr('y', function(d,i) { return (parseInt(newClassNumber) === 2) ? blocksHeight : 0; });
+		// if (logs) console.log(secondsFloat+'\t'+source);
         classCounters[oldClassNumber] -= 1;
         classCounters[newClassNumber] += 1;
         d3.select('#class-counters')
             .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
 	};
 
-	function applyBrush(minIndex, maxIndex) {
+	function applyBrush(groupIndex, minIndex, maxIndex) {
 		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
 		for (var i=minIndex; i<maxIndex; i++) {
-			ChangeBlockAtIndex(i, newClassNumber);
+			changeBlock(groupIndex, i, newClassNumber);
 		}
 	};
 
@@ -460,21 +482,21 @@ function Main() {
 			.classed('class'+newClassNumber, true);
 	}
 
-	function snapBrush(i) {
-		brushNodes[i]
-			.call(brushes[i].extent([
-				Math.floor(brushes[i].extent()[0]), Math.floor(brushes[i].extent()[1])
+	function snapBrush(groupIndex) {
+		brushNodes[groupIndex]
+			.call(brushes[groupIndex].extent([
+				Math.floor(brushes[groupIndex].extent()[0]), Math.floor(brushes[groupIndex].extent()[1])
 			]));
 	}
 
 	function clearBrushes() {
-		for (var i=0; i<numClasses; i++) {
-			oldExtents[i] = null;
-			brushNodes[i].call(brushes[i].clear());
+		for (var groupIndex=0; groupIndex<numClasses; groupIndex++) {
+			oldExtents[groupIndex] = null;
+			brushNodes[groupIndex].call(brushes[groupIndex].clear());
 		}
 	};
 
-	function ExportData() {
+	function exportData() {
 		exportTime = new Date().getTime();
 		exportedData = {};
 		exportedData.metadata = {
@@ -491,8 +513,8 @@ function Main() {
 			// zoomValue: zoomValue,
 		};
 		exportedData.blocksData = blocksData;
-		console.log(exportedData.metadata);
-		console.log(exportedData.blocksData);
+		if (logs) console.log(exportedData.metadata);
+		if (logs) console.log(exportedData.blocksData);
 		$.ajax({
 			type: 'POST',
 			url: 'exportedData',
@@ -500,17 +522,18 @@ function Main() {
 			data: JSON.stringify(exportedData),
             async: false,
 			success: function() {
-                console.log('success');
+                if (logs) console.log('success');
             },
 		});
 	};
 
 	function Update(source) {
 		if (d3.select('body').classed('loaded') === false) { return; }
-		// console.log('Update '+source);
+		// if (logs) console.log('Update '+source);
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
-		if (brushEnabled === true) {
-			updateBrushColor();
+		var brushDrawn = currentBrushExtent.attr('width') > 0;
+		if (brushDrawn === true) {
+			updateBrushColor(currentGroupIndex);
 		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
@@ -519,10 +542,10 @@ function Main() {
 			d3.select('#key-pressed').text(currentSymbol);
 			d3.selectAll('#key-color').call(classify, symbolToClass[currentSymbol]);
 		}
-		if (brushEnabled === false) {
+		if (brushDrawn === false) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
 	        var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-	        ChangeBlockAtIndex(blocksIndex, newClassNumber);
+	        changeBlock(currentGroupIndex, blocksIndex, newClassNumber);
 	    }
 	    if (debug) {
 	    	var keyValueArray = [];

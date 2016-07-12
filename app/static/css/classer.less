@@ -1,0 +1,254 @@
+@class0Color: white;
+@class1Color: dodgerblue;
+@class2Color: orange;
+
+body {
+	// font-size: 14px;
+	// font-family: "Courier New", Courier, monospace;
+	// font-family: Helvetica, sans-serif;
+	margin-top: 20px;
+}
+button {
+	// font-family: "Courier New", Courier, monospace;
+	// font-size: 14px;
+	cursor: pointer;
+}
+input[type="form"] {
+	// font-family: "Courier New", Courier, monospace;
+	// font-size: 14px;
+	text-align: center;
+}
+body, button, input[type="form"] {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+}
+.inline-block {
+	display: inline-block;	
+}
+.row {
+	height: 30px;
+	margin-bottom: 15px;
+}
+.left, .right, .center, .flex {
+	height: 30px;
+	line-height: 30px;
+}
+.left, .right {
+	display: inline-block;
+
+}
+.left {
+	float: left;
+	margin-right: 15px;
+	* {
+		margin-right: 15px;
+	}
+	*:last-child {
+		margin-right: 0px;
+	}
+}
+.right {
+	float: right;
+	button, input {
+		margin-left: 15px;
+	}
+}
+.center {
+	display: block;
+	margin: 0 auto;
+	text-align: center;
+	* {
+		margin-right: 10px;
+	}
+	*:first-child {
+		margin-left: 10px;
+	}
+}
+.flex {
+	display: -webkit-flex;
+}
+.expanded {
+	-webkit-flex: 1;
+	width: 100%;
+	overflow: hidden;
+}
+span.expanded {
+	padding-left: 10px;
+	padding-right: 15px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.outlined, .class-outlined {
+	border: none;
+	outline-style: solid;
+	outline-width: 1px;
+}
+.outlined {
+	outline-color: grey;
+}
+.class-outlined {
+	&.class0 { outline-color: @class0Color; }
+	&.class1 { outline-color: @class1Color; }
+	&.class2 { outline-color: @class2Color; }
+}
+
+.wrap {
+	word-wrap: break-word;
+}
+.scrolls {
+	overflow-x: scroll;
+}
+.label {
+	// font-size: 16px;
+	dominant-baseline: middle;
+	text-anchor: middle;
+}
+text.label {
+	// font-family: Helvetica, sans-serif;
+	// stroke: black;
+	// stroke-width: 1px;
+}
+rect.block {
+	// stroke: white;
+	// stroke-width: 1px;
+	// opacity: 0.6;
+	shape-rendering: crispEdges;
+}
+.brush.brush-disabled {
+	pointer-events: none;
+	visibility: hidden;
+}
+.brush .extent {
+	fill: white;
+	// fill-opacity: 0.6;
+	stroke: black;
+	stroke-width: 1px;
+	// stroke: #fff;
+	// fill-opacity: .125;
+	shape-rendering: crispEdges;
+}
+rect.group-guard {
+	fill: gray;
+	fill-opacity: 0;
+	stroke: gray;
+	stroke-width: 1px;
+	stroke-opacity: 0;
+	shape-rendering: crispEdges;
+	&.current {
+		fill-opacity: 0;
+		stroke-opacity: 0.5;
+		pointer-events: none;
+	}
+	// &.class0 { stroke: @class0Color; }
+	// &.class1 { stroke: @class1Color; }
+	// &.class2 { stroke: @class2Color; }
+}
+rect.block.class0,
+.brush .extent.class0 {
+	fill: white;
+}
+rect.block.class1,
+.brush .extent.class1 {
+	fill: @class1Color;
+}
+rect.block.class2,
+.brush .extent.class2 {
+	fill: @class2Color;
+}
+.class-text.class1 {
+	color: @class1Color;
+}
+.class-text.class2 {
+	color: @class2Color;
+}
+.plain-text {
+	// margin-bottom: 15px;
+}
+.plain-text span {
+	margin-right: 20px;
+}
+
+// general styles
+body:not(.loaded) > *.show-if-loaded,
+body.loaded > *.hide-if-loaded {
+	width: 0px;
+	height: 0px;
+	opacity: 0;
+}
+body.loaded > *.show-if-loaded,
+body:not(.loaded) > *.hide-if-loaded {
+	opacity: 1;
+	// -webkit-transition: opacity 0.5s ease-in;
+ //       -moz-transition: opacity 0.5s ease-in;
+ //        -ms-transition: opacity 0.5s ease-in;
+ //         -o-transition: opacity 0.5s ease-in;
+ //            transition: opacity 0.5s ease-in;
+}
+
+.disabled {
+	position: relative;
+	pointer-events: none;
+}
+.disabled::after {
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0px;
+	left: 0px;
+	background: white;
+	opacity: 0.9;
+}
+.debug {
+	display: none;
+}
+.hidden {
+	display: none;
+}
+
+.tiny {
+	width: 20px;
+	height: 30px;
+}
+.small {
+	width: 30px;
+	height: 30px;
+}
+.medium {
+	width: 100px;
+	height: 30px;
+}
+.large {
+	width: 300px;
+	height: 30px;
+}
+
+// ids
+#track-url-value {
+	cursor: pointer;
+}
+#svg-container {
+	margin-bottom: 10px;
+}
+#wavesurfer-container {
+	margin-left: 10px;
+	margin-right: 10px;
+	// margin-bottom: 20px;
+}
+#wavesurfer-container > *, 
+.block {
+	// min-width: 480px;
+	min-width: 300px;
+	max-width: 620px;
+}
+#wavesurfer-container.brush-enabled wave wave,
+#wavesurfer-container.brush-enabled wave canvas {
+	pointer-events: none;
+}
+#key-pressed {
+	text-align: center;
+}
+#class1-form,
+#class2-form {
+	text-transform: uppercase;
+}

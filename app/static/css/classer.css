@@ -101,7 +101,7 @@ span.expanded {
   dominant-baseline: middle;
   text-anchor: middle;
 }
-.block-rect {
+rect.block {
   shape-rendering: crispEdges;
 }
 .brush.brush-disabled {
@@ -114,15 +114,28 @@ span.expanded {
   stroke-width: 1px;
   shape-rendering: crispEdges;
 }
-.block-rect.class0,
+rect.group-guard {
+  fill: gray;
+  fill-opacity: 0;
+  stroke: gray;
+  stroke-width: 1px;
+  stroke-opacity: 0;
+  shape-rendering: crispEdges;
+}
+rect.group-guard.current {
+  fill-opacity: 0;
+  stroke-opacity: 0.5;
+  pointer-events: none;
+}
+rect.block.class0,
 .brush .extent.class0 {
   fill: white;
 }
-.block-rect.class1,
+rect.block.class1,
 .brush .extent.class1 {
   fill: dodgerblue;
 }
-.block-rect.class2,
+rect.block.class2,
 .brush .extent.class2 {
   fill: orange;
 }
@@ -193,8 +206,8 @@ body:not(.loaded) > *.hide-if-loaded {
 }
 #wavesurfer-container > *,
 .block {
-  min-width: 480px;
-  max-width: 610px;
+  min-width: 300px;
+  max-width: 620px;
 }
 #wavesurfer-container.brush-enabled wave wave,
 #wavesurfer-container.brush-enabled wave canvas {
