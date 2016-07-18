@@ -7,3 +7,4 @@ Wavesurfer Options
 test_classer.js
 test_classer.html
 bu_classer.js
+*.pyc

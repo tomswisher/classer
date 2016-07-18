@@ -1,9 +1,10 @@
 'use strict';
 
 // Settings
-var logs = false;
 var debug = false;
+var logs = false;
 var numClasses = 2;
+var classToName = {'0':'None', '1':'Laughter', '2':'Speech'};
 var minPxPerSec = 20;
 var labelsHeight = 20;
 var blocksHeight = 50;
@@ -43,9 +44,7 @@ var trackPromptText = 'Click to choose a track';
 var defaultTrackURL = '08_smashed_pennies_(m4a)_0.wav';
 var exportedData, blocksData, brushes, brushNodes, blocksRects, labelsData;
 var startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
-var currentGroupIndex, currentBrushExtent;
-var currentSymbol, keyActivated, isBrushing;
-var symbolToClass, classToName;
+var currentGroupIndex, currentBrushExtent, currentSymbol, keyActivated, isBrushing;
 // var zoomValue;
 var keyToSymbol = {
 	// 32:' ',
@@ -127,8 +126,6 @@ function Main() {
 	oldSecondsFloat = 0;
 	secondsFloat = 0;
 	currentGroupIndex = 0;
-	symbolToClass = {};
-	classToName = {};
 	// var wsZoomScale = d3.scale.linear()
 	// 	.domain([1,2])
 	// 	.range([wavesurfer.drawer.params.minPxPerSec, 2*wavesurfer.drawer.params.minPxPerSec]);
@@ -145,7 +142,7 @@ function Main() {
 	
 	var svg = d3.select('#svg-container svg')
 		.attr('width', waveformWidth+10*2)
-		.attr('height', labelsHeight+2*blocksHeight)
+		.attr('height', labelsHeight+2*blocksHeight+1*(numClasses-1)+1)
 		.select('g')
 			.attr('transform', 'translate(10,0)');
 	svg.selectAll('*').remove();
@@ -177,13 +174,13 @@ function Main() {
 	blocksRects = [];
 	var blocksRoots = svg.selectAll('g.blocks-origin').data(blocksData).enter().append('g')
 		.classed('blocks-origin', true)
-		.attr('transform', function(d,i) { return 'translate(0,'+(labelsHeight+i*blocksHeight)+')'; })
+		.attr('transform', function(d,i) { return 'translate(0,'+(labelsHeight+i*(blocksHeight+1*i))+')'; })
 		.each(function(d,groupIndex) {
 			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d);
 			blocksRects[groupIndex].enter().append('rect')
 				.attr('class', function(d) { return 'block class'+d.class; })
 				.attr('x', function(d,i) { return i*minPxPerSec/blocksPerSec; })
-				.attr('y', 0)
+				.attr('y', 1)
 				.attr('width', minPxPerSec/blocksPerSec)
 				.attr('height', blocksHeight);
 			oldExtents[groupIndex] = [0,0];
@@ -202,8 +199,7 @@ function Main() {
 						if (ext[0] !== oldExtents[groupIndex][0] 
 							&& ext[1] !== oldExtents[groupIndex][1] 
 							&& ext[1]-ext[0] !== oldExtents[groupIndex][1]-oldExtents[groupIndex][0]) {
-								// if (logs) console.log('applyBrush');
-								applyBrush(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1]);
+								applyBrush(groupIndex, isClassedSymbol(currentSymbol), oldExtents[groupIndex][0], oldExtents[groupIndex][1]);
 						}
 						isBrushing = true;
 					}
@@ -228,7 +224,7 @@ function Main() {
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
 				.attr('y', 0)
-				.attr('height', blocksHeight-1);
+				.attr('height', blocksHeight);
 			if (groupIndex === 0) {
 				currentBrushExtent = brushNodes[0].selectAll('rect.extent');
 			}
@@ -236,7 +232,7 @@ function Main() {
 				.classed('group-guard', true)
 				.classed('current', (groupIndex===0))
 				.attr('x', 0)
-				.attr('y', 0)
+				.attr('y', 1)
 				.attr('width', waveformWidth)
 				.attr('height', blocksHeight-1)
 				.on('click', function() {
@@ -255,7 +251,7 @@ function Main() {
 		secondsFloat = Math.floor(10*time)/10;
 		if (secondsFloat !== oldSecondsFloat) {
 			oldSecondsFloat = secondsFloat;
-			Update('audioprocess');
+			updateBlocks('audioprocess');
 		}
 	});
 	wavesurfer.on('seek', function(progress) {
@@ -263,7 +259,7 @@ function Main() {
 		oldTime = progress*wavesurfer.getDuration();
 		secondsFloat = Math.floor(10*oldTime)/10;
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
-		// Update('seek');
+		// updateBlocks('seek');
 	});
 	wavesurfer.on('finish', function() {
 		// – When it finishes playing.
@@ -338,13 +334,13 @@ function Main() {
             playbackSpeed = this.value;
             d3.select('#speed-value').text(parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
-            Update('speed-slider');
+            updateBlocks('speed-slider');
         });
 
 	// d3.select('#zoom-slider')
 	// 	.on('change', function() {
 	// 		clearBrushes();
- //            Update('zoom-sliderStart');
+ //            updateBlocks('zoom-sliderStart');
 	// 		zoomValue = Number(this.value);
 	// 		minPxPerSec = wsZoomScale(zoomValue);
 	// 		wavesurfer.zoom(minPxPerSec);
@@ -370,33 +366,8 @@ function Main() {
 	// 			.attr({
 	// 				x: function(d) { return d*minPxPerSec; },
 	// 			});
- //            Update('zoom-sliderEnd');
+ //            updateBlocks('zoom-sliderEnd');
 	// 	});
-
-	d3.select('#class1-name-form').datum({'class':1});
-	d3.select('#class2-name-form').datum({'class':2});
-	d3.selectAll('#class1-name-form, #class2-name-form')
-		.each(function(d) {
-			classToName[d.class] = this.value;
-		})
-		.on('change', function(d) {
-			classToName[d.class] = this.value;
-		});
-
-	d3.select('#class1-form').datum({'class':1});
-	d3.select('#class2-form').datum({'class':2});
-	d3.selectAll('#class1-form, #class2-form')
-		.each(function(d) {
-			var newValue = this.value.toUpperCase();
-			symbolToClass[newValue] = d.class;
-			d.oldValue = newValue;
-		})
-		.on('change', function(d) {
-			delete(symbolToClass[d.oldValue]);
-			var newValue = this.value.toUpperCase();
-			symbolToClass[newValue] = d.class;
-			d.oldValue = newValue;
-		});
 
 	d3.select('#export-data-button')
 		.on('mousedown', function() {
@@ -416,7 +387,7 @@ function Main() {
 		.on('keyup', onKeyup);
 
 	requestAnimationFrame(function() {
-		Update();
+		updateBlocks();
 	});
 
 	function onKeydown(event) {
@@ -443,19 +414,38 @@ function Main() {
 		} else if (newSymbol === currentSymbol && keyActivated === false) {
 			currentSymbol = newSymbol;
 		}
-		Update('keydown');
+		updateBlocks('keydown');
 	};
 
 	function onKeyup(event) {
 		keyActivated = true;
 		if (event.which !== 16) { // not shift
-			Update('keyup');
+			updateBlocks('keyup');
 		}
 	};
 
-	function changeBlock(groupIndex, blocksIndex, newClassNumber) {
+	function isClassedSymbol(symbol) {
+		if (symbol === 'Z') {
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	function getClassNumber(groupIndex, isClassed) {
+		var newClassNumber = '0';
+		if (isClassed && groupIndex === 0) {
+			newClassNumber = '1';
+		} else if (isClassed && groupIndex === 1) {
+			newClassNumber = '2';
+		}
+		return newClassNumber;
+	};
+
+	function changeBlock(groupIndex, isClassed, blocksIndex) {
 		var block = d3.select(blocksRects[groupIndex][0][blocksIndex]);
         var oldClassNumber = block.datum()['class'];
+        var newClassNumber = getClassNumber(groupIndex, isClassed);
         blocksData[groupIndex][blocksIndex].class = newClassNumber;
 		block
 			.datum({'class':newClassNumber})
@@ -468,26 +458,25 @@ function Main() {
             .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
 	};
 
-	function applyBrush(groupIndex, minIndex, maxIndex) {
-		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-		for (var i=minIndex; i<maxIndex; i++) {
-			changeBlock(groupIndex, i, newClassNumber);
+	function applyBrush(groupIndex, isClassed, minIndex, maxIndex) {
+		for (var blocksIndex=minIndex; blocksIndex<maxIndex; blocksIndex++) {
+			changeBlock(groupIndex, isClassed, blocksIndex);
 		}
 	};
 
-	function updateBrushColor() {
-		var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
+	function updateBrushColor(groupIndex, isClassed) {
+		var newClassNumber = getClassNumber(groupIndex, isClassed);
 		svg.selectAll('.brush rect.extent')
 			.attr('class', 'extent') // reset classes
 			.classed('class'+newClassNumber, true);
-	}
+	};
 
 	function snapBrush(groupIndex) {
 		brushNodes[groupIndex]
 			.call(brushes[groupIndex].extent([
 				Math.floor(brushes[groupIndex].extent()[0]), Math.floor(brushes[groupIndex].extent()[1])
 			]));
-	}
+	};
 
 	function clearBrushes() {
 		for (var groupIndex=0; groupIndex<numClasses; groupIndex++) {
@@ -507,7 +496,6 @@ function Main() {
 			startTime: startTime,
 			exportTime: exportTime,
 			elapsedSec: (exportTime-startTime)/1000,
-			symbolToClass:  symbolToClass,
 			classToName: classToName,
 			playbackSpeed: playbackSpeed,
 			// zoomValue: zoomValue,
@@ -527,25 +515,24 @@ function Main() {
 		});
 	};
 
-	function Update(source) {
+	function updateBlocks(source) {
 		if (d3.select('body').classed('loaded') === false) { return; }
-		// if (logs) console.log('Update '+source);
+		// if (logs) console.log('update '+source);
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		var brushDrawn = currentBrushExtent.attr('width') > 0;
 		if (brushDrawn === true) {
-			updateBrushColor(currentGroupIndex);
+			updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
 		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
 			d3.selectAll('#key-color').call(classify, 0);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
-			d3.selectAll('#key-color').call(classify, symbolToClass[currentSymbol]);
+			d3.selectAll('#key-color').call(classify, getClassNumber(currentGroupIndex, isClassedSymbol(currentSymbol)));
 		}
 		if (brushDrawn === false) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-	        var newClassNumber = (symbolToClass[currentSymbol] !== undefined) ? symbolToClass[currentSymbol] : '0';
-	        changeBlock(currentGroupIndex, blocksIndex, newClassNumber);
+	        changeBlock(currentGroupIndex, isClassedSymbol(currentSymbol), blocksIndex);
 	    }
 	    if (debug) {
 	    	var keyValueArray = [];
@@ -591,10 +578,6 @@ function Main() {
 	    		startTime:startTime,
 	    		exportTime:exportTime,
 	    		elapsedSec:(exportTime-startTime)/1000,
-	    		class1Key:d3.select('#class1-name-form').property('value'),
-	    		class2Key:d3.select('#class2-name-form').property('value'),
-	    		class1Key:d3.select('#class1-form').property('value'),
-	    		class2Key:d3.select('#class2-form').property('value'),
 	    		playbackSpeed:playbackSpeed,
 	    		// zoomValue:zoomValue,
 	    	};
@@ -639,4 +622,4 @@ function setLoadedClass(state) {
 	} else if (state === 'unloaded') {
 		d3.select('body').classed('loaded', false);
 	}
-}
+};

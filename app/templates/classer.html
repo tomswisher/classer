@@ -42,20 +42,15 @@
 		<div class='left'>Playback Speed: x<span id='speed-value'>1.0</span></div>
 		<div class='flex'><input class='expanded' id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' /></div>
 	</div>
-	<div class='row settings'>
-		<div class='left'><input class='medium class-outlined class1' id='class1-name-form' type='form' value='Laughter'></input><span>is key:</span><input class='small class-outlined class1' id='class1-form' type='form' size='1' maxlength='1' value='Z'></input></div>
-	</div>
-	<div class='row settings'>
-		<div class='left'><input class='medium class-outlined class2' id='class2-name-form' type='form' value='Speech'  ></input><span>is key:</span><input class='small class-outlined class2' id='class2-form' type='form' size='1' maxlength='1' value='X'></input></div>
-	</div>
-	<div class='row'>
-		<div class='left'>Class Counters: <span id='class-counters'></span></div>
-	</div>
 	<div class='row'>
 		<div class='left'><button class='medium outlined' id='export-data-button'>Export Data</button></div>
 	</div>
 </div>
-<div class='block debug' id='wavesurfer-debug'></div>
+<div class='block debug show-if-loaded' id='wavesurfer-debug'>
+	<div class='row'>
+		<div class='left'>Class Counters: <span id='class-counters'></span></div>
+	</div>
+</div>
 
 </body>
 <!-- <script type='text/javascript' src='../static/js/d3.v3.min.js'></script> -->
