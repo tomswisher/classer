@@ -142,7 +142,7 @@ function Main() {
 	
 	var svg = d3.select('#svg-container svg')
 		.attr('width', waveformWidth+10*2)
-		.attr('height', labelsHeight+2*blocksHeight+1*(numClasses-1)+1)
+		.attr('height', labelsHeight+2*blocksHeight+2*(numClasses-1)+1)
 		.select('g')
 			.attr('transform', 'translate(10,0)');
 	svg.selectAll('*').remove();
@@ -223,8 +223,8 @@ function Main() {
 				// .attr('transform', 'translate(0,'+(labelsHeight+groupIndex*blocksHeight)+')')
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
-				.attr('y', 0)
-				.attr('height', blocksHeight);
+				.attr('y', 1)
+				.attr('height', blocksHeight-1);
 			if (groupIndex === 0) {
 				currentBrushExtent = brushNodes[0].selectAll('rect.extent');
 			}
@@ -234,7 +234,7 @@ function Main() {
 				.attr('x', 0)
 				.attr('y', 1)
 				.attr('width', waveformWidth)
-				.attr('height', blocksHeight-1)
+				.attr('height', blocksHeight)
 				.on('click', function() {
 					d3.selectAll('rect.group-guard').classed('current', false);
 					d3.select(this).classed('current', true);
