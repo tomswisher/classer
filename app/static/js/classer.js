@@ -44,7 +44,7 @@ var trackPromptText = 'Click to choose a track';
 var defaultTrackURL = '08_smashed_pennies_(m4a)_0.wav';
 var exportedData, blocksData, brushes, brushNodes, blocksRects, labelsData;
 var startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
-var currentGroupIndex, currentBrushExtent, currentSymbol, keyActivated, isBrushing;
+var currentGroupIndex, currentSymbol, keyActivated, isBrushing;
 // var zoomValue;
 var keyToSymbol = {
 	// 32:' ',
@@ -224,10 +224,7 @@ function Main() {
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
 				.attr('y', 1)
-				.attr('height', blocksHeight-1);
-			if (groupIndex === 0) {
-				currentBrushExtent = brushNodes[0].selectAll('rect.extent');
-			}
+				.attr('height', blocksHeight);
 			d3.select(this).append('rect')
 				.classed('group-guard', true)
 				.classed('current', (groupIndex===0))
@@ -236,11 +233,14 @@ function Main() {
 				.attr('width', waveformWidth)
 				.attr('height', blocksHeight)
 				.on('click', function() {
+					var currentExtent = brushes[currentGroupIndex].extent();
+					applyBrush(currentGroupIndex, isClassedSymbol(currentSymbol), currentExtent[0], currentExtent[1]);
+					clearBrushes();
+					//
+					currentGroupIndex = groupIndex;
+					updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
 					d3.selectAll('rect.group-guard').classed('current', false);
 					d3.select(this).classed('current', true);
-					currentGroupIndex = groupIndex;
-					currentBrushExtent = brushNodes[currentGroupIndex].selectAll('rect.extent');
-					clearBrushes();
 				});
 		});
 
@@ -466,7 +466,7 @@ function Main() {
 
 	function updateBrushColor(groupIndex, isClassed) {
 		var newClassNumber = getClassNumber(groupIndex, isClassed);
-		svg.selectAll('.brush rect.extent')
+		brushNodes[groupIndex].selectAll('rect.extent')
 			.attr('class', 'extent') // reset classes
 			.classed('class'+newClassNumber, true);
 	};
@@ -516,13 +516,10 @@ function Main() {
 	};
 
 	function updateBlocks(source) {
+		console.log('updateBlocks '+source);
 		if (d3.select('body').classed('loaded') === false) { return; }
 		// if (logs) console.log('update '+source);
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
-		var brushDrawn = currentBrushExtent.attr('width') > 0;
-		if (brushDrawn === true) {
-			updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
-		}
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
 			d3.selectAll('#key-color').call(classify, 0);
@@ -530,7 +527,9 @@ function Main() {
 			d3.select('#key-pressed').text(currentSymbol);
 			d3.selectAll('#key-color').call(classify, getClassNumber(currentGroupIndex, isClassedSymbol(currentSymbol)));
 		}
-		if (brushDrawn === false) {
+		updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
+		var brushDrawn = brushNodes[currentGroupIndex].selectAll('rect.extent').attr('width') > 0;
+		if (!brushDrawn) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
 	        changeBlock(currentGroupIndex, isClassedSymbol(currentSymbol), blocksIndex);
 	    }

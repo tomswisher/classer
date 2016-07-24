@@ -116,7 +116,7 @@ rect.block {
 }
 rect.group-guard {
   cursor: pointer;
-  fill: gray;
+  fill: lightgray;
   fill-opacity: 0;
   stroke: gray;
   stroke-width: 1px;
@@ -125,7 +125,7 @@ rect.group-guard {
 }
 rect.group-guard.current {
   fill-opacity: 0;
-  stroke-opacity: 0.5;
+  stroke-opacity: 1;
   pointer-events: none;
 }
 rect.block.class0,
