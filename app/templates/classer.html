@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<div class='block'>
+<div class='solid'>
 	<div class='row'>
 		<div class='left'><button class='medium outlined' id='track-load-button'>Load Track</button></div>
 		<div class='right'><button class='medium outlined' id='track-clear-button'>Clear Track</button></div>
@@ -14,7 +14,7 @@
 		<input class='hidden' id='track-input' type='file'></input>
 	</div>
 </div>
-<div class='block hide-if-loaded'>
+<div class='solid hide-if-loaded'>
 	<div class='row'>
 		<div class='center'><span id='loading-value'></span></div>
 	</div>
@@ -23,16 +23,16 @@
 <div class='show-if-loaded' id='svg-container'>
 	<svg><g></g></svg>
 </div>
-<div class='block show-if-loaded'>
+<div class='solid show-if-loaded'>
 	<div class='row'>
-		<div class='left'><button class='medium outlined' id='play-pause-ws-button'>Play</button><span id='current-time'>0.0s</span></div>
+		<div class='left'><button class='medium outlined' id='play-pause-ws-button'></button><span id='current-time'>0.0s</span></div>
 		<div class='right'><button class='medium outlined' id='reset-ws-button'>Stop</button></div>
 	</div>
 	<!-- <div class='row'>
 		<div class='left'><button class='medium outlined' id='interaction-mode-button'>Toggle Mode</button><span id='interaction-mode-text'></span></div>
 	</div> -->
 	<div class='row'>
-		<div class='center class-outlined class0' id='key-color'><div class='inline-block'>Key Pressed:</div><div class='tiny inline-block' id='key-pressed'></div></div>
+		<div class='center category-outlined'><div class='inlineblock'>Key Pressed:</div><div class='tiny inlineblock' id='key-pressed'></div></div>
 	</div>
 	<!-- <div class='row settings'>
 		<div class='left'>Zoom Level: x<span id='zoom-value'>2.0</span></div>
@@ -46,11 +46,7 @@
 		<div class='left'><button class='medium outlined' id='export-data-button'>Export Data</button></div>
 	</div>
 </div>
-<div class='block debug show-if-loaded' id='wavesurfer-debug'>
-	<div class='row'>
-		<div class='left'>Class Counters: <span id='class-counters'></span></div>
-	</div>
-</div>
+<div class='solid debug show-if-loaded' id='wavesurfer-debug'></div>
 
 </body>
 <!-- <script type='text/javascript' src='../static/js/d3.v3.min.js'></script> -->

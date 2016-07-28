@@ -1,6 +1,8 @@
-@class0Color: white;
-@class1Color: dodgerblue;
-@class2Color: orange;
+@outlinedColor: grey;
+@noCategoryColor: white;
+@category0Color: blue;
+@category1Color: mediumorchid;
+@category2Color: orange;
 
 body {
 	// font-size: 14px;
@@ -22,7 +24,7 @@ body, button, input[type="form"] {
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: 14px;
 }
-.inline-block {
+.inlineblock {
 	display: inline-block;	
 }
 .row {
@@ -78,18 +80,19 @@ span.expanded {
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
-.outlined, .class-outlined {
+.outlined, .category-outlined {
 	border: none;
 	outline-style: solid;
 	outline-width: 1px;
 }
 .outlined {
-	outline-color: grey;
+	outline-color: @outlinedColor;
 }
-.class-outlined {
-	&.class0 { outline-color: @class0Color; }
-	&.class1 { outline-color: @class1Color; }
-	&.class2 { outline-color: @class2Color; }
+.category-outlined {
+	outline-color: @noCategoryColor;
+	&.category0 { outline-color: @category0Color; }
+	&.category1 { outline-color: @category1Color; }
+	&.category2 { outline-color: @category2Color; }
 }
 
 .wrap {
@@ -113,19 +116,40 @@ rect.block {
 	// stroke-width: 1px;
 	// opacity: 0.6;
 	shape-rendering: crispEdges;
+	fill: @noCategoryColor;
+}
+rect.block.category0.classified {
+	fill: @category0Color;
+}
+rect.block.category1.classified {
+	fill: @category1Color;
+}
+rect.block.category2.classified {
+	fill: @category2Color;
 }
 .brush.brush-disabled {
 	pointer-events: none;
 	visibility: hidden;
 }
 .brush .extent {
-	fill: white;
 	// fill-opacity: 0.6;
 	stroke: black;
 	stroke-width: 1px;
 	// stroke: #fff;
 	// fill-opacity: .125;
 	shape-rendering: crispEdges;
+}
+.brush rect {
+	fill: @noCategoryColor;
+}
+.brush.category0.classified rect.extent {
+	fill: @category0Color;
+}
+.brush.category1.classified rect.extent {
+	fill: @category1Color;
+}
+.brush.category2.classified rect.extent {
+	fill: @category2Color;
 }
 rect.group-guard {
 	cursor: pointer;
@@ -140,30 +164,6 @@ rect.group-guard {
 		stroke-opacity: 1;
 		pointer-events: none;
 	}
-	// &.class0 { stroke: @class0Color; }
-	// &.class1 { stroke: @class1Color; }
-	// &.class2 { stroke: @class2Color; }
-}
-rect.block.class0,
-.brush .extent.class0 {
-	fill: white;
-}
-rect.block.class1,
-.brush .extent.class1 {
-	fill: @class1Color;
-}
-rect.block.class2,
-.brush .extent.class2 {
-	fill: @class2Color;
-}
-.class-text.class1 {
-	color: @class1Color;
-}
-.class-text.class2 {
-	color: @class2Color;
-}
-.plain-text {
-	// margin-bottom: 15px;
 }
 .plain-text span {
 	margin-right: 20px;
@@ -237,7 +237,7 @@ body:not(.loaded) > *.hide-if-loaded {
 	// margin-bottom: 20px;
 }
 #wavesurfer-container > *, 
-.block {
+.solid {
 	// min-width: 480px;
 	min-width: 300px;
 	max-width: 620px;
@@ -248,8 +248,4 @@ body:not(.loaded) > *.hide-if-loaded {
 }
 #key-pressed {
 	text-align: center;
-}
-#class1-form,
-#class2-form {
-	text-transform: uppercase;
 }

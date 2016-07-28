@@ -3,8 +3,11 @@
 // Settings
 var debug = false;
 var logs = false;
-var numClasses = 2;
-var classToName = {'0':'None', '1':'Laughter', '2':'Speech'};
+var categories = [
+	{'name':'Laughter', 'color':'blue'},
+	{'name':'Speech',   'color':'mediumorchid'},
+	{'name':'Clapping', 'color':'orange'},
+];
 var minPxPerSec = 20;
 var labelsHeight = 20;
 var blocksHeight = 50;
@@ -37,6 +40,7 @@ var wsOpts = {
     // mediaType     : 'audio',
     // autoCenter    : true,
 };
+var numCategories = categories.length;
 var wavesurfer;
 var trackPromptText = 'Click to choose a track';
 // var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
@@ -44,6 +48,7 @@ var trackPromptText = 'Click to choose a track';
 var defaultTrackURL = '08_smashed_pennies_(m4a)_0.wav';
 var exportedData, blocksData, brushes, brushNodes, blocksRects, labelsData;
 var startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
+var svg;
 var currentGroupIndex, currentSymbol, keyActivated, isBrushing;
 // var zoomValue;
 var keyToSymbol = {
@@ -140,15 +145,16 @@ function Main() {
 		.style('width', waveformWidth+'px')
 		.style('height', wsOpts.height+'px');
 	
-	var svg = d3.select('#svg-container svg')
+	svg = d3.select('#svg-container svg')
 		.attr('width', waveformWidth+10*2)
-		.attr('height', labelsHeight+2*blocksHeight+2*(numClasses-1)+1)
+		.attr('height', labelsHeight+numCategories*(blocksHeight+2)+1)
 		.select('g')
 			.attr('transform', 'translate(10,0)');
 	svg.selectAll('*').remove();
 	
 	labelsData = d3.range(numSeconds+1);
-	var secondLabels = svg.selectAll('text.label').data(labelsData);
+	var secondLabels = svg.append('g').attr('class', 'text-origin')
+		.selectAll('text.label').data(labelsData);
 	secondLabels.enter().append('text')
 		.classed('label', true)
 		.attr('x', function(d) { return d*minPxPerSec; })
@@ -157,9 +163,9 @@ function Main() {
 		// .text(function(d) { return (d === 0) ? '' : d; });
 
 	blocksData = [];
-	for (var groupIndex=0; groupIndex<numClasses; groupIndex++) {
+	for (var groupIndex=0; groupIndex<numCategories; groupIndex++) {
 		blocksData[groupIndex] = d3.range(numSeconds*blocksPerSec)
-			.map(function(d) { return {class:'0', time:(d/blocksPerSec)}; });
+			.map(function(d) { return {'classified':false, 'time':(d/blocksPerSec)}; });
 	}
 
 	var xScale = d3.scale.linear()
@@ -171,15 +177,18 @@ function Main() {
 	brushNodes = [];
 	var oldExtents = [];
 
+	keyActivated = false;
+	currentSymbol = undefined;
+
 	blocksRects = [];
 	var blocksRoots = svg.selectAll('g.blocks-origin').data(blocksData).enter().append('g')
-		.classed('blocks-origin', true)
-		.attr('transform', function(d,i) { return 'translate(0,'+(labelsHeight+i*(blocksHeight+1*i))+')'; })
-		.each(function(d,groupIndex) {
+		.attr('class', 'blocks-origin')
+		.attr('transform', function(d, i) { return 'translate(0,'+(labelsHeight+i*(blocksHeight+2))+')'; })
+		.each(function(d, groupIndex) {
 			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d);
 			blocksRects[groupIndex].enter().append('rect')
-				.attr('class', function(d) { return 'block class'+d.class; })
-				.attr('x', function(d,i) { return i*minPxPerSec/blocksPerSec; })
+				.attr('class', function(d) { return 'block category'+groupIndex; })
+				.attr('x', function(d, i) { return i*minPxPerSec/blocksPerSec; })
 				.attr('y', 1)
 				.attr('width', minPxPerSec/blocksPerSec)
 				.attr('height', blocksHeight);
@@ -199,7 +208,7 @@ function Main() {
 						if (ext[0] !== oldExtents[groupIndex][0] 
 							&& ext[1] !== oldExtents[groupIndex][1] 
 							&& ext[1]-ext[0] !== oldExtents[groupIndex][1]-oldExtents[groupIndex][0]) {
-								applyBrush(groupIndex, isClassedSymbol(currentSymbol), oldExtents[groupIndex][0], oldExtents[groupIndex][1]);
+								applyBrush(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1], isCorrectSymbol(currentSymbol));
 						}
 						isBrushing = true;
 					}
@@ -219,8 +228,7 @@ function Main() {
 					// if (logs) console.log('brushend', brushes[groupIndex].extent(), oldExtents[groupIndex], brushExtentDiff);
 				});
 			brushNodes[groupIndex] = d3.select(this).append('g')
-				.attr('class', 'brush')
-				// .attr('transform', 'translate(0,'+(labelsHeight+groupIndex*blocksHeight)+')')
+				.attr('class', 'brush category'+groupIndex)
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
 				.attr('y', 1)
@@ -234,11 +242,11 @@ function Main() {
 				.attr('height', blocksHeight)
 				.on('click', function() {
 					var currentExtent = brushes[currentGroupIndex].extent();
-					applyBrush(currentGroupIndex, isClassedSymbol(currentSymbol), currentExtent[0], currentExtent[1]);
+					applyBrush(currentGroupIndex, currentExtent[0], currentExtent[1], isCorrectSymbol(currentSymbol));
 					clearBrushes();
 					//
 					currentGroupIndex = groupIndex;
-					updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
+					updateBrushColor(currentGroupIndex, isCorrectSymbol(currentSymbol));
 					d3.selectAll('rect.group-guard').classed('current', false);
 					d3.select(this).classed('current', true);
 				});
@@ -288,6 +296,7 @@ function Main() {
 	// });
 
 	d3.select('#play-pause-ws-button')
+        .text('Play')
 		.on('mousedown', function() {
 			wavesurfer.playPause();
 			d3.select('#play-pause-ws-button')
@@ -349,7 +358,7 @@ function Main() {
 	// 		xScale.range([0, waveformWidth]);
 	// 		svg.attr('width', waveformWidth);
 	// 		blocksRects
-	// 			.attr('transform', function(d,i) {
+	// 			.attr('transform', function(d, i) {
 	// 				var xT = i*minPxPerSec/blocksPerSec;
 	// 				var yT = 0;
 	// 				return 'translate('+xT+','+yT+')';
@@ -373,14 +382,6 @@ function Main() {
 		.on('mousedown', function() {
 			exportData();
 		});
-
-	var classHistoryData = [], currentString = '';
-	var classCounters = {'0':blocksData[0].length, '1':0, '2':0};
-	d3.select('#class-counters')
-		.text('0:'+classCounters['0']+' 1:'+classCounters['1']+' 2:'+classCounters['2'])
-
-	keyActivated = false;
-	currentSymbol = undefined;
 
 	$(document)
 		.on('keydown', onKeydown)
@@ -424,7 +425,7 @@ function Main() {
 		}
 	};
 
-	function isClassedSymbol(symbol) {
+	function isCorrectSymbol(symbol) {
 		if (symbol === 'Z') {
 			return true;
 		} else {
@@ -432,43 +433,22 @@ function Main() {
 		}
 	};
 
-	function getClassNumber(groupIndex, isClassed) {
-		var newClassNumber = '0';
-		if (isClassed && groupIndex === 0) {
-			newClassNumber = '1';
-		} else if (isClassed && groupIndex === 1) {
-			newClassNumber = '2';
-		}
-		return newClassNumber;
-	};
-
-	function changeBlock(groupIndex, isClassed, blocksIndex) {
-		var block = d3.select(blocksRects[groupIndex][0][blocksIndex]);
-        var oldClassNumber = block.datum()['class'];
-        var newClassNumber = getClassNumber(groupIndex, isClassed);
-        blocksData[groupIndex][blocksIndex].class = newClassNumber;
-		block
-			.datum({'class':newClassNumber})
-			.attr('class', function(d) { return 'block class'+d.class; });
-			// .attr('y', function(d,i) { return (parseInt(newClassNumber) === 2) ? blocksHeight : 0; });
-		// if (logs) console.log(secondsFloat+'\t'+source);
-        classCounters[oldClassNumber] -= 1;
-        classCounters[newClassNumber] += 1;
-        d3.select('#class-counters')
-            .text('0:'+classCounters['0']+'\t1:'+classCounters['1']+'\t2:'+classCounters['2'])
-	};
-
-	function applyBrush(groupIndex, isClassed, minIndex, maxIndex) {
+	function applyBrush(groupIndex, minIndex, maxIndex, isClassified) {
 		for (var blocksIndex=minIndex; blocksIndex<maxIndex; blocksIndex++) {
-			changeBlock(groupIndex, isClassed, blocksIndex);
+			changeBlock(groupIndex, blocksIndex, isClassified);
 		}
 	};
 
-	function updateBrushColor(groupIndex, isClassed) {
-		var newClassNumber = getClassNumber(groupIndex, isClassed);
-		brushNodes[groupIndex].selectAll('rect.extent')
-			.attr('class', 'extent') // reset classes
-			.classed('class'+newClassNumber, true);
+    function changeBlock(groupIndex, blocksIndex, isClassified) {
+        var block = d3.select(blocksRects[groupIndex][0][blocksIndex]);
+        block
+            .datum({'classified':isClassified})
+            .classed('classified', isClassified);
+    };
+
+	function updateBrushColor(groupIndex, isClassified) {
+		brushNodes[groupIndex]
+			.classed('classified', isClassified);
 	};
 
 	function snapBrush(groupIndex) {
@@ -479,7 +459,7 @@ function Main() {
 	};
 
 	function clearBrushes() {
-		for (var groupIndex=0; groupIndex<numClasses; groupIndex++) {
+		for (var groupIndex=0; groupIndex<numCategories; groupIndex++) {
 			oldExtents[groupIndex] = null;
 			brushNodes[groupIndex].call(brushes[groupIndex].clear());
 		}
@@ -492,11 +472,10 @@ function Main() {
 			trackURL: trackURL,
 			trackDurationSec: wavesurfer.getDuration(),
 			blocksPerSec: blocksPerSec,
-			classCounters: classCounters,
 			startTime: startTime,
 			exportTime: exportTime,
 			elapsedSec: (exportTime-startTime)/1000,
-			classToName: classToName,
+			categories: categories,
 			playbackSpeed: playbackSpeed,
 			// zoomValue: zoomValue,
 		};
@@ -516,22 +495,20 @@ function Main() {
 	};
 
 	function updateBlocks(source) {
-		console.log('updateBlocks '+source);
+		// console.log('updateBlocks '+source);
 		if (d3.select('body').classed('loaded') === false) { return; }
 		// if (logs) console.log('update '+source);
 		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
-			d3.selectAll('#key-color').call(classify, 0);
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
-			d3.selectAll('#key-color').call(classify, getClassNumber(currentGroupIndex, isClassedSymbol(currentSymbol)));
 		}
-		updateBrushColor(currentGroupIndex, isClassedSymbol(currentSymbol));
+		updateBrushColor(currentGroupIndex, isCorrectSymbol(currentSymbol));
 		var brushDrawn = brushNodes[currentGroupIndex].selectAll('rect.extent').attr('width') > 0;
 		if (!brushDrawn) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-	        changeBlock(currentGroupIndex, isClassedSymbol(currentSymbol), blocksIndex);
+	        changeBlock(currentGroupIndex, blocksIndex, isCorrectSymbol(currentSymbol));
 	    }
 	    if (debug) {
 	    	var keyValueArray = [];
@@ -573,7 +550,6 @@ function Main() {
 	    		trackURL:trackURL,
 	    		trackDurationSec:wavesurfer.getDuration(),
 	    		blocksPerSec:blocksPerSec,
-	    		classCounters:classCounters,
 	    		startTime:startTime,
 	    		exportTime:exportTime,
 	    		elapsedSec:(exportTime-startTime)/1000,
@@ -606,14 +582,14 @@ function Main() {
 	};
 };
 
-function classify(selection, classNumber) {
-	classNumber = (classNumber !== undefined) ? classNumber : 0;
-	for (var i=0; i<=2; i++) {
-		selection.classed('class'+i, false)	;
-	}
-	selection.classed('class'+classNumber, true);
-	return selection;
-};
+// function classify(selection, categoryNumber) {
+// 	categoryNumber = (categoryNumber !== undefined) ? categoryNumber : 0;
+// 	for (var i=0; i<=2; i++) {
+// 		selection.classed('category'+i, false)	;
+// 	}
+// 	selection.classed('category'+categoryNumber, true);
+// 	return selection;
+// };
 
 function setLoadedClass(state) {
 	if (state === 'loaded') {
