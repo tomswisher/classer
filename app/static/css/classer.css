@@ -105,6 +105,7 @@ span.expanded {
   text-anchor: middle;
 }
 rect.block {
+  cursor: pointer;
   shape-rendering: crispEdges;
   fill: white;
 }
@@ -117,14 +118,10 @@ rect.block.category1.classified {
 rect.block.category2.classified {
   fill: orange;
 }
-.brush.brush-disabled {
-  pointer-events: none;
-  visibility: hidden;
-}
 .brush .extent {
   stroke: black;
   stroke-width: 1px;
-  shape-rendering: crispEdges;
+  stroke: red;
 }
 .brush rect {
   fill: white;
@@ -138,19 +135,16 @@ rect.block.category2.classified {
 .brush.category2.classified rect.extent {
   fill: orange;
 }
-rect.group-guard {
-  cursor: pointer;
-  fill: lightgray;
+rect.group-marker {
+  pointer-events: none;
   fill-opacity: 0;
-  stroke: gray;
-  stroke-width: 1px;
+  stroke: black;
   stroke-opacity: 0;
+  stroke-width: 1px;
   shape-rendering: crispEdges;
 }
-rect.group-guard.current {
-  fill-opacity: 0;
-  stroke-opacity: 1;
-  pointer-events: none;
+rect.group-marker.current {
+  stroke-opacity: 0.33;
 }
 .plain-text span {
   margin-right: 20px;
@@ -213,7 +207,7 @@ body:not(.loaded) > *.hide-if-loaded {
 }
 #wavesurfer-container > *,
 .solid {
-  min-width: 300px;
+  min-width: 350px;
   max-width: 620px;
 }
 #wavesurfer-container.brush-enabled wave wave,

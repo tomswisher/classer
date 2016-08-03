@@ -4,14 +4,19 @@
 var debug = false;
 var logs = false;
 var categories = [
-	{'name':'Laughter', 'color':'blue'},
-	{'name':'Speech',   'color':'mediumorchid'},
-	{'name':'Clapping', 'color':'orange'},
+	{'symbol':'X', 'name':'Laughter', 'color':'blue'},
+	{'symbol':'C', 'name':'Speech',   'color':'mediumorchid'},
+	{'symbol':'V', 'name':'Clapping', 'color':'orange'},
 ];
+var symbolToCategory = {};
+$.each(categories, function(i, d) {
+	symbolToCategory[d['symbol']] = i;
+});
 var minPxPerSec = 20;
 var labelsHeight = 20;
-var blocksHeight = 50;
+var blocksHeight = 75;
 var blocksPerSec = 10;
+var brushMargin = 5;
 var playbackSpeed = 1.0;
 var wsOpts = {
     height        : 128,
@@ -49,7 +54,7 @@ var defaultTrackURL = '08_smashed_pennies_(m4a)_0.wav';
 var exportedData, blocksData, brushes, brushNodes, blocksRects, labelsData;
 var startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
 var svg;
-var currentGroupIndex, currentSymbol, keyActivated, isBrushing;
+var currentGroupIndex, currentSymbol, keyActivated, switchingIndex, isBrushing;
 // var zoomValue;
 var keyToSymbol = {
 	// 32:' ',
@@ -186,6 +191,7 @@ function Main() {
 	var oldExtents = [];
 
 	keyActivated = false;
+	switchingIndex = false;
 	currentSymbol = undefined;
 
 	blocksRects = [];
@@ -193,17 +199,30 @@ function Main() {
 		.attr('class', 'blocks-origin')
 		.attr('transform', function(d, i) { return 'translate(0,'+(labelsHeight+i*(blocksHeight+2))+')'; })
 		.each(function(d, groupIndex) {
-			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d);
-			blocksRects[groupIndex].enter().append('rect')
+			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d).enter().append('rect')
 				.attr('class', function(d) { return 'block category'+groupIndex; })
 				.attr('x', function(d, i) { return i*minPxPerSec/blocksPerSec; })
 				.attr('y', 1)
 				.attr('width', minPxPerSec/blocksPerSec)
 				.attr('height', blocksHeight);
+			d3.select(this).append('rect')
+				.classed('group-marker', true)
+				.classed('current', (groupIndex===0))
+				.attr('x', 0)
+				.attr('y', 1)
+				.attr('width', waveformWidth)
+				.attr('height', blocksHeight);
 			oldExtents[groupIndex] = [0,0];
 			brushes[groupIndex] = d3.svg.brush()
 				.x(xScale)
 				.on('brushstart', function() {
+					if (currentGroupIndex !== groupIndex) {
+						var currentExtent = brushes[currentGroupIndex].extent();
+						ApplyBrush(currentGroupIndex, currentExtent[0], currentExtent[1], IsClasserSymbol(currentSymbol));
+						ClearBrushes();
+						currentGroupIndex = groupIndex;
+						UpdateBrushes(currentGroupIndex, IsClasserSymbol(currentSymbol));
+					}
 					if (logs) console.log(i);
 					oldExtents[groupIndex] = [brushes[groupIndex].extent()[0], brushes[groupIndex].extent()[1]];
 					// if (logs) console.log('brushstart', oldExtents[groupIndex], brushes[groupIndex].extent());
@@ -216,7 +235,7 @@ function Main() {
 						if (ext[0] !== oldExtents[groupIndex][0] 
 							&& ext[1] !== oldExtents[groupIndex][1] 
 							&& ext[1]-ext[0] !== oldExtents[groupIndex][1]-oldExtents[groupIndex][0]) {
-								ApplyBrush(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1], IsCorrectSymbol(currentSymbol));
+								ApplyBrush(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1], IsClasserSymbol(currentSymbol));
 						}
 						isBrushing = true;
 					}
@@ -236,28 +255,11 @@ function Main() {
 					// if (logs) console.log('brushend', brushes[groupIndex].extent(), oldExtents[groupIndex], brushExtentDiff);
 				});
 			brushNodes[groupIndex] = d3.select(this).append('g')
-				.attr('class', 'brush category'+groupIndex)
+				.attr('class', 'brush brushdisabled category'+groupIndex)
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
-				.attr('y', 1)
-				.attr('height', blocksHeight);
-			d3.select(this).append('rect')
-				.classed('group-guard', true)
-				.classed('current', (groupIndex===0))
-				.attr('x', 0)
-				.attr('y', 1)
-				.attr('width', waveformWidth)
-				.attr('height', blocksHeight)
-				.on('click', function() {
-					var currentExtent = brushes[currentGroupIndex].extent();
-					ApplyBrush(currentGroupIndex, currentExtent[0], currentExtent[1], IsCorrectSymbol(currentSymbol));
-					ClearBrushes();
-					//
-					currentGroupIndex = groupIndex;
-					UpdateBrushColor(currentGroupIndex, IsCorrectSymbol(currentSymbol));
-					d3.selectAll('rect.group-guard').classed('current', false);
-					d3.select(this).classed('current', true);
-				});
+				.attr('y', 2+brushMargin)
+				.attr('height', blocksHeight-2-2*brushMargin);
 		});
 
 	wavesurfer.on('audioprocess', function(time) {
@@ -388,6 +390,10 @@ function Main() {
 			return;
 		}
 		var newSymbol = keyToSymbol[event.which];
+		if (symbolToCategory[newSymbol] !== undefined) {
+			switchingIndex = symbolToCategory[newSymbol];
+			return;
+		}
 		// if (logs) console.log(keyActivated, currentSymbol, newSymbol);
 		if (newSymbol === currentSymbol && keyActivated === false) { return; }
 		if (newSymbol !== currentSymbol) {
@@ -408,9 +414,19 @@ function Main() {
 		if (event.which !== 16) { // not shift
 			UpdateBlocks('keyup');
 		}
+		if (switchingIndex !== false) {
+			if (currentGroupIndex !== switchingIndex) {
+				var currentExtent = brushes[currentGroupIndex].extent();
+				ApplyBrush(currentGroupIndex, currentExtent[0], currentExtent[1], IsClasserSymbol(currentSymbol));
+				ClearBrushes();
+			}
+			currentGroupIndex = switchingIndex;
+			UpdateBrushes(currentGroupIndex, IsClasserSymbol(currentSymbol));
+			switchingIndex = false;
+		}
 	};
 
-	function IsCorrectSymbol(symbol) {
+	function IsClasserSymbol(symbol) {
 		if (symbol === 'Z') {
 			return true;
 		} else {
@@ -431,9 +447,13 @@ function Main() {
             .classed('classified', isClassified);
     };
 
-	function UpdateBrushColor(groupIndex, isClassified) {
+	function UpdateBrushes(groupIndex, isClassified) {
 		brushNodes[groupIndex]
 			.classed('classified', isClassified);
+		d3.selectAll('rect.group-marker')
+			.classed('current', false);
+		d3.selectAll('rect.group-marker').filter(function(d, i) { return i === currentGroupIndex; })
+			.classed('current', true);
 	};
 
 	function SnapBrush(groupIndex) {
@@ -450,21 +470,25 @@ function Main() {
 		}
 	};
 
-	function UpdateBlocks(source) {
-		// console.log('UpdateBlocks '+source);
-		if (d3.select('body').classed('loaded') === false) { return; }
-		// if (logs) console.log('update '+source);
-		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
+	function UpdateKeyPressedLabel() {
 		if (currentSymbol === undefined) {
 			d3.select('#key-pressed').text('\u00A0');
 		} else {
 			d3.select('#key-pressed').text(currentSymbol);
 		}
-		UpdateBrushColor(currentGroupIndex, IsCorrectSymbol(currentSymbol));
+	};
+
+	function UpdateBlocks(source) {
+		// console.log('UpdateBlocks '+source);
+		if (d3.select('body').classed('loaded') === false) { return; }
+		// if (logs) console.log('update '+source);
+		d3.select('#current-time').text(secondsFloat.toFixed(1)+'s');
+		UpdateKeyPressedLabel();
+		UpdateBrushes(currentGroupIndex, IsClasserSymbol(currentSymbol));
 		var brushDrawn = brushNodes[currentGroupIndex].selectAll('rect.extent').attr('width') > 0;
 		if (!brushDrawn) {
 	        var blocksIndex = parseInt(secondsFloat*blocksPerSec);
-	        ChangeBlock(currentGroupIndex, blocksIndex, IsCorrectSymbol(currentSymbol));
+	        ChangeBlock(currentGroupIndex, blocksIndex, IsClasserSymbol(currentSymbol));
 	    }
 	    if (debug) {
 	    	var keyValueArray = [];

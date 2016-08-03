@@ -112,6 +112,7 @@ text.label {
 	// stroke-width: 1px;
 }
 rect.block {
+	cursor: pointer;
 	// stroke: white;
 	// stroke-width: 1px;
 	// opacity: 0.6;
@@ -127,17 +128,17 @@ rect.block.category1.classified {
 rect.block.category2.classified {
 	fill: @category2Color;
 }
-.brush.brush-disabled {
-	pointer-events: none;
-	visibility: hidden;
+.brush.brushdisabled {
+	// pointer-events: none !important;
+	// visibility: hidden;
 }
 .brush .extent {
 	// fill-opacity: 0.6;
 	stroke: black;
 	stroke-width: 1px;
-	// stroke: #fff;
+	stroke: red;
 	// fill-opacity: .125;
-	shape-rendering: crispEdges;
+	// shape-rendering: crispEdges;
 }
 .brush rect {
 	fill: @noCategoryColor;
@@ -151,18 +152,15 @@ rect.block.category2.classified {
 .brush.category2.classified rect.extent {
 	fill: @category2Color;
 }
-rect.group-guard {
-	cursor: pointer;
-	fill: lightgray;
+rect.group-marker {
+	pointer-events: none;
 	fill-opacity: 0;
-	stroke: gray;
-	stroke-width: 1px;
+	stroke: black;
 	stroke-opacity: 0;
+	stroke-width: 1px;
 	shape-rendering: crispEdges;
 	&.current {
-		fill-opacity: 0;
-		stroke-opacity: 1;
-		pointer-events: none;
+		stroke-opacity: 0.33;
 	}
 }
 .plain-text span {
@@ -234,12 +232,10 @@ body:not(.loaded) > *.hide-if-loaded {
 #wavesurfer-container {
 	margin-left: 10px;
 	margin-right: 10px;
-	// margin-bottom: 20px;
 }
 #wavesurfer-container > *, 
 .solid {
-	// min-width: 480px;
-	min-width: 300px;
+	min-width: 350px;
 	max-width: 620px;
 }
 #wavesurfer-container.brush-enabled wave wave,
