@@ -1,8 +1,8 @@
 @outlinedColor: grey;
 @noCategoryColor: white;
-@category0Color: blue;
-@category1Color: mediumorchid;
-@category2Color: orange;
+@group0Color: blue;
+@group1Color: mediumorchid;
+@group2Color: orange;
 
 body {
 	// font-size: 14px;
@@ -80,7 +80,7 @@ span.expanded {
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
-.outlined, .category-outlined {
+.outlined, .group-outlined {
 	border: none;
 	outline-style: solid;
 	outline-width: 1px;
@@ -88,11 +88,11 @@ span.expanded {
 .outlined {
 	outline-color: @outlinedColor;
 }
-.category-outlined {
+.group-outlined {
 	outline-color: @noCategoryColor;
-	&.category0 { outline-color: @category0Color; }
-	&.category1 { outline-color: @category1Color; }
-	&.category2 { outline-color: @category2Color; }
+	&.group0 { outline-color: @group0Color; }
+	&.group1 { outline-color: @group1Color; }
+	&.group2 { outline-color: @group2Color; }
 }
 
 .wrap {
@@ -119,14 +119,14 @@ rect.block {
 	shape-rendering: crispEdges;
 	fill: @noCategoryColor;
 }
-rect.block.category0.classified {
-	fill: @category0Color;
+rect.block.group0.classified {
+	fill: @group0Color;
 }
-rect.block.category1.classified {
-	fill: @category1Color;
+rect.block.group1.classified {
+	fill: @group1Color;
 }
-rect.block.category2.classified {
-	fill: @category2Color;
+rect.block.group2.classified {
+	fill: @group2Color;
 }
 .brush.brushdisabled {
 	// pointer-events: none !important;
@@ -135,22 +135,22 @@ rect.block.category2.classified {
 .brush .extent {
 	// fill-opacity: 0.6;
 	stroke: black;
-	stroke-width: 1px;
+	// stroke-width: 1px;
 	stroke: red;
 	// fill-opacity: .125;
-	// shape-rendering: crispEdges;
+	shape-rendering: crispEdges;
 }
 .brush rect {
 	fill: @noCategoryColor;
 }
-.brush.category0.classified rect.extent {
-	fill: @category0Color;
+.brush.group0.classified rect.extent {
+	fill: @group0Color;
 }
-.brush.category1.classified rect.extent {
-	fill: @category1Color;
+.brush.group1.classified rect.extent {
+	fill: @group1Color;
 }
-.brush.category2.classified rect.extent {
-	fill: @category2Color;
+.brush.group2.classified rect.extent {
+	fill: @group2Color;
 }
 rect.group-marker {
 	pointer-events: none;
@@ -158,7 +158,7 @@ rect.group-marker {
 	stroke: black;
 	stroke-opacity: 0;
 	stroke-width: 1px;
-	shape-rendering: crispEdges;
+	// shape-rendering: crispEdges;
 	&.current {
 		stroke-opacity: 0.33;
 	}

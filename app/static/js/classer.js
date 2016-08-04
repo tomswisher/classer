@@ -3,20 +3,20 @@
 // Settings
 var debug = false;
 var logs = false;
-var categories = [
+var groups = [
 	{'symbol':'X', 'name':'Laughter', 'color':'blue'},
 	{'symbol':'C', 'name':'Speech',   'color':'mediumorchid'},
 	{'symbol':'V', 'name':'Clapping', 'color':'orange'},
 ];
-var symbolToCategory = {};
-$.each(categories, function(i, d) {
-	symbolToCategory[d['symbol']] = i;
+var symbolToGroup = {};
+$.each(groups, function(i, d) {
+	symbolToGroup[d['symbol']] = i;
 });
 var minPxPerSec = 20;
 var labelsHeight = 20;
 var blocksHeight = 75;
 var blocksPerSec = 10;
-var brushMargin = 5;
+var brushMargin = 4;
 var playbackSpeed = 1.0;
 var wsOpts = {
     height        : 128,
@@ -45,7 +45,7 @@ var wsOpts = {
     // mediaType     : 'audio',
     // autoCenter    : true,
 };
-var numCategories = categories.length;
+var numGroups = groups.length;
 var wavesurfer;
 var trackPromptText = 'Click to choose a track';
 // var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
@@ -160,7 +160,7 @@ function Main() {
 	
 	svg = d3.select('#svg-container svg')
 		.attr('width', waveformWidth+10*2)
-		.attr('height', labelsHeight+numCategories*(blocksHeight+2)+1)
+		.attr('height', labelsHeight+numGroups*(blocksHeight+2)+1)
 		.select('g')
 			.attr('transform', 'translate(10,0)');
 	svg.selectAll('*').remove();
@@ -176,7 +176,7 @@ function Main() {
 		// .text(function(d) { return (d === 0) ? '' : d; });
 
 	blocksData = [];
-	for (var groupIndex=0; groupIndex<numCategories; groupIndex++) {
+	for (var groupIndex=0; groupIndex<numGroups; groupIndex++) {
 		blocksData[groupIndex] = d3.range(numSeconds*blocksPerSec)
 			.map(function(d) { return {'classified':false, 'time':(d/blocksPerSec)}; });
 	}
@@ -200,7 +200,7 @@ function Main() {
 		.attr('transform', function(d, i) { return 'translate(0,'+(labelsHeight+i*(blocksHeight+2))+')'; })
 		.each(function(d, groupIndex) {
 			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d).enter().append('rect')
-				.attr('class', function(d) { return 'block category'+groupIndex; })
+				.attr('class', function(d) { return 'block group'+groupIndex; })
 				.attr('x', function(d, i) { return i*minPxPerSec/blocksPerSec; })
 				.attr('y', 1)
 				.attr('width', minPxPerSec/blocksPerSec)
@@ -255,11 +255,12 @@ function Main() {
 					// if (logs) console.log('brushend', brushes[groupIndex].extent(), oldExtents[groupIndex], brushExtentDiff);
 				});
 			brushNodes[groupIndex] = d3.select(this).append('g')
-				.attr('class', 'brush brushdisabled category'+groupIndex)
+				.attr('class', 'brush brushdisabled group'+groupIndex)
 				.call(brushes[groupIndex]);
 			brushNodes[groupIndex].selectAll('rect')
-				.attr('y', 2+brushMargin)
-				.attr('height', blocksHeight-2-2*brushMargin);
+				.attr('y', 1+0.5*brushMargin)
+				.attr('height', blocksHeight-2*0.5*brushMargin)
+				.style('stroke-width', brushMargin);
 		});
 
 	wavesurfer.on('audioprocess', function(time) {
@@ -390,8 +391,8 @@ function Main() {
 			return;
 		}
 		var newSymbol = keyToSymbol[event.which];
-		if (symbolToCategory[newSymbol] !== undefined) {
-			switchingIndex = symbolToCategory[newSymbol];
+		if (symbolToGroup[newSymbol] !== undefined) {
+			switchingIndex = symbolToGroup[newSymbol];
 			return;
 		}
 		// if (logs) console.log(keyActivated, currentSymbol, newSymbol);
@@ -464,7 +465,7 @@ function Main() {
 	};
 
 	function ClearBrushes() {
-		for (var groupIndex=0; groupIndex<numCategories; groupIndex++) {
+		for (var groupIndex=0; groupIndex<numGroups; groupIndex++) {
 			oldExtents[groupIndex] = null;
 			brushNodes[groupIndex].call(brushes[groupIndex].clear());
 		}
@@ -571,7 +572,7 @@ function Main() {
 			startTime: startTime,
 			exportTime: exportTime,
 			elapsedSec: (exportTime-startTime)/1000,
-			categories: categories,
+			groups: groups,
 			playbackSpeed: playbackSpeed,
 			// zoomValue: zoomValue,
 		};

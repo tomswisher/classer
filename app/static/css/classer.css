@@ -74,7 +74,7 @@ span.expanded {
   text-overflow: ellipsis;
 }
 .outlined,
-.category-outlined {
+.group-outlined {
   border: none;
   outline-style: solid;
   outline-width: 1px;
@@ -82,16 +82,16 @@ span.expanded {
 .outlined {
   outline-color: grey;
 }
-.category-outlined {
+.group-outlined {
   outline-color: white;
 }
-.category-outlined.category0 {
+.group-outlined.group0 {
   outline-color: blue;
 }
-.category-outlined.category1 {
+.group-outlined.group1 {
   outline-color: mediumorchid;
 }
-.category-outlined.category2 {
+.group-outlined.group2 {
   outline-color: orange;
 }
 .wrap {
@@ -109,30 +109,30 @@ rect.block {
   shape-rendering: crispEdges;
   fill: white;
 }
-rect.block.category0.classified {
+rect.block.group0.classified {
   fill: blue;
 }
-rect.block.category1.classified {
+rect.block.group1.classified {
   fill: mediumorchid;
 }
-rect.block.category2.classified {
+rect.block.group2.classified {
   fill: orange;
 }
 .brush .extent {
   stroke: black;
-  stroke-width: 1px;
   stroke: red;
+  shape-rendering: crispEdges;
 }
 .brush rect {
   fill: white;
 }
-.brush.category0.classified rect.extent {
+.brush.group0.classified rect.extent {
   fill: blue;
 }
-.brush.category1.classified rect.extent {
+.brush.group1.classified rect.extent {
   fill: mediumorchid;
 }
-.brush.category2.classified rect.extent {
+.brush.group2.classified rect.extent {
   fill: orange;
 }
 rect.group-marker {
@@ -141,7 +141,6 @@ rect.group-marker {
   stroke: black;
   stroke-opacity: 0;
   stroke-width: 1px;
-  shape-rendering: crispEdges;
 }
 rect.group-marker.current {
   stroke-opacity: 0.33;
