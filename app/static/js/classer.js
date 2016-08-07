@@ -51,7 +51,7 @@ var trackLoadButton = body.select('#track-load-button');
 var trackClearButton = body.select('#track-clear-button');
 var trackURLLabel = body.select('#track-url-label');
 var trackInput = body.select('#track-input');
-var loadingValueLabel = body.select('#loading-label');
+var loadingLabel = body.select('#loading-label');
 var wavesurferContainer = body.select('#wavesurfer-container');
 
 var svgsContainer = body.select('#svgs-container');
@@ -103,27 +103,27 @@ if (sessionStorage.trackURL === undefined) {
 var wavesurfer = WaveSurfer.create(wavesurferOpts);
 wavesurfer.on('loading', function(a) {
 	// Fires continuously when loading via XHR or drag'n'drop. Callback will receive (integer) loading progress in percents [0..100] and (object) event target.
-	// loadingValueLabel.text('Loading at '+a+'%');
-	loadingValueLabel.text('Loading...');
+	// loadingLabel.text('Loading at '+a+'%');
+	loadingLabel.text('Loading...');
 });
 wavesurfer.on('error', function(xhrError) {
 	// Occurs on error. Callback will receive (string) error message.
-	loadingValueLabel.text('Error loading '+trackURL);
+	loadingLabel.text('Error in loading '+trackURL);
 });
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	// SetLoadedClass('loaded');
-	loadingValueLabel.text('');
+	loadingLabel.text('Press Z to apply your class.  Pres X/C/V/Tab/Shift to toggle classes.');
 	Main();
 });
 
-loadingValueLabel.text('');
+loadingLabel.text('');
 trackLoadButton
 	.on('click', function() {
 		SetLoadedClass('unloaded');
 		$(document).off();
 		svgsContainer.selectAll('*').remove();
-		loadingValueLabel.text('');
+		loadingLabel.text('');
 		trackURLLabel.text(trackURL);
 		// assumes you put audio in folder /static/audio
 		wavesurfer.load('../static/audio/'+trackURL);
@@ -137,7 +137,7 @@ trackClearButton
 		stopButton.on('mousedown')();
 		$(document).off();
 		svgsContainer.selectAll('*').remove();
-		loadingValueLabel.text('');
+		loadingLabel.text('');
 		trackURLLabel.text(trackPromptText);
 		trackURL = defaultTrackURL;
 		sessionStorage.setItem('trackURL', defaultTrackURL);
