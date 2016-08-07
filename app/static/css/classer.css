@@ -1,3 +1,12 @@
+.color-ref.group0 {
+  color: blue;
+}
+.color-ref.group1 {
+  color: mediumorchid;
+}
+.color-ref.group2 {
+  color: orange;
+}
 body {
   margin-top: 20px;
 }
@@ -104,22 +113,31 @@ span.expanded {
   dominant-baseline: middle;
   text-anchor: middle;
 }
+svg.seconds-svg {
+  margin-bottom: 2px;
+}
+svg.blocks-svg {
+  margin-bottom: 2px;
+  margin-top: 2px;
+  margin-left: 9px;
+  padding-left: 1px;
+  padding-right: 2px;
+}
 rect.block {
   cursor: pointer;
   shape-rendering: crispEdges;
   fill: white;
 }
-rect.block.group0.classified {
+rect.block.classified.group0 {
   fill: blue;
 }
-rect.block.group1.classified {
+rect.block.classified.group1 {
   fill: mediumorchid;
 }
-rect.block.group2.classified {
+rect.block.classified.group2 {
   fill: orange;
 }
 .brush .extent {
-  stroke: black;
   stroke: red;
   shape-rendering: crispEdges;
 }
@@ -135,16 +153,6 @@ rect.block.group2.classified {
 .brush.group2.classified rect.extent {
   fill: orange;
 }
-rect.group-marker {
-  pointer-events: none;
-  fill-opacity: 0;
-  stroke: black;
-  stroke-opacity: 0;
-  stroke-width: 1px;
-}
-rect.group-marker.current {
-  stroke-opacity: 0.33;
-}
 .plain-text span {
   margin-right: 20px;
 }
@@ -157,6 +165,11 @@ body.loaded > *.hide-if-loaded {
 body.loaded > *.show-if-loaded,
 body:not(.loaded) > *.hide-if-loaded {
   opacity: 1;
+  -webkit-transition: opacity 0.5s ease-in;
+  -moz-transition: opacity 0.5s ease-in;
+  -ms-transition: opacity 0.5s ease-in;
+  -o-transition: opacity 0.5s ease-in;
+  transition: opacity 0.5s ease-in;
 }
 .disabled {
   position: relative;
@@ -194,10 +207,10 @@ body:not(.loaded) > *.hide-if-loaded {
   width: 300px;
   height: 30px;
 }
-#track-url-value {
+#track-url-label {
   cursor: pointer;
 }
-#svg-container {
+#svgs-container {
   margin-bottom: 10px;
 }
 #wavesurfer-container {

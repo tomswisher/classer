@@ -10,42 +10,44 @@
 	<div class='row'>
 		<div class='left'><button class='medium outlined' id='track-load-button'>Load Track</button></div>
 		<div class='right'><button class='medium outlined' id='track-clear-button'>Clear Track</button></div>
-		<div class='flex'><span class='expanded outlined' id='track-url-value'></span></div>
+		<div class='flex'><span class='expanded outlined' id='track-url-label'></span></div>
 		<input class='hidden' id='track-input' type='file'></input>
 	</div>
 </div>
 <div class='solid hide-if-loaded'>
 	<div class='row'>
-		<div class='center'><span id='loading-value'></span></div>
+		<div class='center'><span id='loading-label'></span></div>
 	</div>
 </div>
-<div class='show-if-loaded scroll-h'>
+<div class='show-if-loaded'>
 	<div id='wavesurfer-container'></div>
-	<div id='svg-container'>
-		<svg><g></g></svg>
-	</div>
+	<div id='svgs-container'></div>
 </div>
 <div class='solid show-if-loaded'>
 	<div class='row'>
-		<div class='left'><button class='medium outlined' id='play-pause-ws-button'></button><span id='current-time'>0.0s</span></div>
-		<div class='right'><button class='medium outlined' id='reset-ws-button'>Stop</button></div>
+		<div class='left'><button class='medium outlined' id='play-pause-button'></button><span id='current-time-label'>0.0 s</span></div>
+		<div class='right'><button class='medium outlined' id='stop-button'>Stop</button></div>
 	</div>
 	<div class='row'>
-		<div class='center category-outlined'><div class='inlineblock'>Key Pressed:</div><div class='tiny inlineblock' id='key-pressed'></div></div>
+		<div class='center category-outlined'><div class='inlineblock'>Key Pressed:</div><div class='tiny inlineblock' id='key-pressed-label'></div></div>
 	</div>
 	<!-- <div class='row settings'>
-		<div class='left'>Zoom Level: x<span id='zoom-value'>2.0</span></div>
+		<div class='left'>Zoom Level: x<span id='zoom-label'>2.0</span></div>
 		<div class='flex'><input class='expanded' id='zoom-slider' type='range' min='1' max='10' step='0.1' value='2.0' /></div>
 	</div> -->
 	<div class='row settings'>
-		<div class='left'>Playback Speed: x<span id='speed-value'>1.0</span></div>
+		<div class='left'>Playback Speed: x <span id='speed-label'>1.0</span></div>
 		<div class='flex'><input class='expanded' id='speed-slider' type='range' min='0.1' max='3' step='0.1' value='1' /></div>
 	</div>
 	<div class='row'>
 		<div class='left'><button class='medium outlined' id='export-data-button'>Export Data</button></div>
 	</div>
 </div>
-<div class='solid debug show-if-loaded' id='wavesurfer-debug'></div>
+<div class='solid hidden show-if-loaded' id='debug-container'>
+	<span class='color-ref group0'>Group 0</span>
+	<span class='color-ref group1'>Group 1</span>
+	<span class='color-ref group2'>Group 2</span>
+</div>
 
 </body>
 <!-- <script type='text/javascript' src='../static/js/d3.v3.min.js'></script> -->
