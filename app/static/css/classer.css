@@ -219,7 +219,7 @@ body:not(.loaded) > *.hide-if-loaded {
 }
 #wavesurfer-container > *,
 .solid {
-  min-width: 350px;
+  min-width: 360px;
   max-width: 620px;
 }
 #wavesurfer-container.brush-enabled wave wave,

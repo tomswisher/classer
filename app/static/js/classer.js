@@ -57,7 +57,7 @@ var wavesurferContainer = body.select('#wavesurfer-container');
 var svgsContainer = body.select('#svgs-container');
 var secondsSvg, secondsData;
 var blocksSvgs, blocksData, blocksRects;
-var brushes, brushNodes, oldExtent;
+var brushes, brushNodes, oldExtent, isResizing;
 
 var playPauseButton = body.select('#play-pause-button');
 var currentTimeLabel = body.select('#current-time-label');
@@ -119,7 +119,7 @@ wavesurfer.on('ready', function() {
 
 loadingLabel.text('');
 trackLoadButton
-	.on('click', function() {
+	.on('mousedown', function() {
 		SetLoadedClass('unloaded');
 		$(document).off();
 		svgsContainer.selectAll('*').remove();
@@ -132,7 +132,7 @@ trackLoadButton
 		});
 	});
 trackClearButton
-	.on('click', function() {
+	.on('mousedown', function() {
 		SetLoadedClass('unloaded');
 		stopButton.on('mousedown')();
 		$(document).off();
@@ -144,7 +144,10 @@ trackClearButton
 	});
 trackURLLabel
 	.text((trackURL !== defaultTrackURL) ? trackURL : trackPromptText)
-	.on('click', function() {
+	.on('mousedown', function() {
+		if (!wavesurfer.backend.isPaused()) {
+			playPauseButton.on('mousedown')();
+		}
 		trackInput.node().click();
 	});
 trackInput
@@ -211,6 +214,7 @@ function Main() {
 		.domain([0, blocksData[0].length])
 		.range([0, waveformWidth]);
 	oldExtent = null;
+	isResizing = false;
 	brushes = [];
 	brushNodes = [];
 	keyActivated = false;
@@ -246,42 +250,43 @@ function Main() {
 						return;
 					}
 					var brush = brushes[currentGroupIndex];
-					if (logs) console.log(currentGroupIndex+'\tbrushstart', IsClasserSymbol(currentSymbol)+'\t', (brush.empty()?'empty':'full '), oldExtent!==null+'\t', brush.extent());
+					// if (logs) console.log(currentGroupIndex+'\tbrushstart', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
 				})
 				.on('brush', function() {
 					var brush = brushes[currentGroupIndex];
+					// if (logs) console.log(currentGroupIndex+'\tbrush1    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
 					SnapBrush(groupIndex, Math.round(brush.extent()[0]), Math.round(brush.extent()[1]));
-					// var resizeDisplay = brushNodes[currentGroupIndex].selectAll('.resize').style('display');
-					// console.log(resizeDisplay);
-					if (brush.empty() && oldExtent !== null && oldExtent[0] !== oldExtent[1]) {
-						if (logs) console.log(currentGroupIndex+'\tbrush     ', IsClasserSymbol(currentSymbol)+'\t', (brush.empty()?'empty':'full '), oldExtent!==null+'\t', brush.extent());
-						ChangeBlocks(currentGroupIndex, oldExtent[0], oldExtent[1], IsClasserSymbol(currentSymbol));
+					// if (logs) console.log(currentGroupIndex+'\tbrush2    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
+
+					if (!isResizing) {
+						if (!blocksData[groupIndex][brush.extent()[0]].classified) { 
+							SnapBrush(groupIndex, 0, 0);
+							oldExtent = null;
+						} else {
+							ExpandBrush(groupIndex, brush.extent()[0]);
+							console.log('ChangeBlocks', groupIndex);
+							ChangeBlocks(currentGroupIndex, brush.extent()[0], brush.extent()[1], false);
+							isResizing = true;
+							oldExtent = [brush.extent()[0], brush.extent()[1]];
+							// brush.event(d3.select(brushNodes[0]));
+						}
+					} else {
+						if (d3.event.sourceEvent.type === 'mouseup') {
+							SnapBrush(groupIndex, oldExtent[0], oldExtent[1]);
+						} else if (brush.empty() && oldExtent !== null && oldExtent[0] !== oldExtent[1]) {
+							console.log('ChangeBlocks', groupIndex);
+							ChangeBlocks(currentGroupIndex, oldExtent[0], oldExtent[1], IsClasserSymbol(currentSymbol));
+							isResizing = false;
+							oldExtent = null;
+						} else {
+							oldExtent = [brush.extent()[0], brush.extent()[1]];
+						}
 					}
-					oldExtent = [brush.extent()[0], brush.extent()[1]];
-					// if (logs) console.log(currentGroupIndex+'\tbrush     ', IsClasserSymbol(currentSymbol)+'\t', (brush.empty()?'empty':'full '), oldExtent!==null+'\t', brush.extent());
-					// if (!isBrushing && !blocksData[groupIndex][brush.extent()[0]].classified) {
-					// 	if (logs) console.log(groupIndex, 'unclassified');
-					// 	ClearBrushes();
-					// 	return;
-					// } else {
-					// 	if (logs) console.log(groupIndex, 'classified');
-					// }
-					// if (isBrushing === false) {
-					// 	if (logs) console.log('brush     ', brush.extent());
-					// 	ExpandBrush(groupIndex, brush.extent()[0]);
-					// 	var ext = [brush.extent()[0], brush.extent()[1]];
-					// 	if (ext[0] !== oldExtents[groupIndex][0] 
-					// 		&& ext[1] !== oldExtents[groupIndex][1] 
-					// 		&& ext[1]-ext[0] !== oldExtents[groupIndex][1]-oldExtents[groupIndex][0]) {
-					// 			ChangeBlocks(groupIndex, oldExtents[groupIndex][0], oldExtents[groupIndex][1], IsClasserSymbol(currentSymbol));
-					// 	}
-					// 	isBrushing = true;
-					// }
-					// oldExtents[groupIndex] = [brush.extent()[0], brush.extent()[1]];
+					// if (logs) console.log(currentGroupIndex+'\tbrush3    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
 				})
 				.on('brushend', function() {
 					var brush = brushes[currentGroupIndex];
-					if (logs) console.log(currentGroupIndex+'\tbrushend  ', IsClasserSymbol(currentSymbol)+'\t', (brush.empty()?'empty':'full '), oldExtent!==null+'\t', brush.extent());
+					// if (logs) console.log(currentGroupIndex+'\tbrushend  ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
 
 					// var currentExtent = brushes[currentGroupIndex].extent();
 					// ChangeBlocks(currentGroupIndex, currentExtent[0], currentExtent[1], IsClasserSymbol(currentSymbol));
@@ -359,7 +364,7 @@ function Main() {
 		.on('mousedown', function() {
 			wavesurfer.playPause();
 			playPauseButton
-				.text((wavesurfer.backend.isPaused() === true) ? 'Play' : 'Pause');
+				.text(wavesurfer.backend.isPaused() ? 'Play' : 'Pause');
 		});
 
 	stopButton
@@ -380,7 +385,7 @@ function Main() {
             playbackSpeed = this.value;
             speedLabel.text(parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
-            UpdateBlocks('speed-slider');
+            // UpdateBlocks('speed-slider');
         });
 
 	// zoomSlider
@@ -444,9 +449,24 @@ function Main() {
 			switchingIndex = (currentGroupIndex === 2) ? 0 : currentGroupIndex+1;
 		}
 		if (event.which === 9) { // tab
-			event.preventDefault();
-			// switchingIndex = (currentGroupIndex === 0) ? 2 : currentGroupIndex-1;
-			switchingIndex = (currentGroupIndex === 2) ? 0 : currentGroupIndex+1;
+			var tabIndex = blocksSvgs[0].indexOf(document.activeElement);
+			if (tabIndex )
+			return;
+			
+			if (tabIndex === -1) {
+				return;
+			}
+			switchingIndex = tabIndex;
+			// 	event.preventDefault();
+			// 	switchingIndex = currentGroupIndex+1;
+			// if (currentGroupIndex === 2) {
+			// 	return;
+			// }
+			// switchingIndex = currentGroupIndex+1;
+			// if (currentGroupIndex === 2) {
+			// 	return;
+			// }
+			// switchingIndex = currentGroupIndex+1;
 			// currentGroupIndex = (currentGroupIndex+1)%3;
 			// blocksSvgs[0][currentGroupIndex].focus();
 			// if (blocksSvgs[0].indexOf(document.activeElement) === -1) {
@@ -491,19 +511,21 @@ function Main() {
 			switchingIndex = null;
 			return;
 		}
-		if (event.which !== 16) { // not shift
+		if (blocksSvgs[0].indexOf(document.activeElement) !== -1) {
 			UpdateBlocks('keyup');
 		}
+		// if (event.which !== 9) { // not tab
 	};
 
 	function SwitchGroup(switchingIndex) {
-		console.log('SwitchGroup', switchingIndex);
+		console.log(currentGroupIndex, switchingIndex);
 		var currentExtent = brushes[currentGroupIndex].extent();
 		ChangeBlocks(currentGroupIndex, currentExtent[0], currentExtent[1], IsClasserSymbol(currentSymbol));
 		ClearBrushes();
 		currentGroupIndex = switchingIndex;
 		switchingIndex = null;
 		oldExtent = null;
+		isResizing = false;
 		blocksSvgs[0][currentGroupIndex].focus();
 		UpdateBrushes(currentGroupIndex, IsClasserSymbol(currentSymbol));
 	};
@@ -526,8 +548,7 @@ function Main() {
 		while (maxIndex < blocksData[groupIndex].length && blocksData[groupIndex][maxIndex].classified) {
 			maxIndex++;
 		}
-		maxIndex--;
-		if (logs) console.log(groupIndex, minIndex, maxIndex);
+		// maxIndex--;
 		SnapBrush(groupIndex, minIndex, maxIndex);
 	};
 
@@ -556,7 +577,7 @@ function Main() {
 	};
 
 	function ChangeBlocks(groupIndex, minIndex, maxIndex, isClassified) {
-		console.log('ChangeBlocks', groupIndex, minIndex, maxIndex, isClassified);
+		// console.log('ChangeBlocks', groupIndex, minIndex, maxIndex, isClassified);
 		for (var blocksIndex=minIndex; blocksIndex<maxIndex; blocksIndex++) {
 			ChangeBlock(groupIndex, blocksIndex, isClassified);
 		}
@@ -577,7 +598,7 @@ function Main() {
 	};
 
 	function UpdateBlocks(source) {
-		// if (logs) console.log('UpdateBlocks '+source);
+		if (logs) console.log('UpdateBlocks '+source);
 		if (body.classed('loaded') === false) { return; }
 		// if (logs) console.log('update '+source);
 		currentTimeLabel.text(secondsFloat.toFixed(1)+' s');
@@ -688,7 +709,7 @@ function Main() {
 			exportedData.blocksDataRefined.push([blockDatum[0].time, classifiedArray]);
 		});
 		if (logs) console.log(exportedData.metadata);
-		if (logs) console.log(exportedData.exportedData.blocksDataRefined);
+		if (logs) console.log(exportedData.blocksDataRefined);
 		// $.ajax({
 		// 	type: 'POST',
 		// 	url: 'exportedData',
