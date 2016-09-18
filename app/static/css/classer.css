@@ -2,15 +2,19 @@
   color: blue;
 }
 .color-ref.group1 {
-  color: mediumorchid;
+  color: orange;
 }
 .color-ref.group2 {
-  color: orange;
+  color: mediumorchid;
 }
 body {
   margin-top: 20px;
 }
+span {
+  font-size: 14px;
+}
 button {
+  font-size: 14px;
   cursor: pointer;
 }
 input[type="form"] {
@@ -35,10 +39,6 @@ input[type="form"] {
 .flex {
   height: 30px;
   line-height: 30px;
-}
-.left,
-.right {
-  display: inline-block;
 }
 .left {
   float: left;
@@ -82,26 +82,8 @@ span.expanded {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.outlined,
-.group-outlined {
-  border: none;
-  outline-style: solid;
-  outline-width: 1px;
-}
 .outlined {
-  outline-color: grey;
-}
-.group-outlined {
-  outline-color: white;
-}
-.group-outlined.group0 {
-  outline-color: blue;
-}
-.group-outlined.group1 {
-  outline-color: mediumorchid;
-}
-.group-outlined.group2 {
-  outline-color: orange;
+  border: 1px solid grey;
 }
 .wrap {
   word-wrap: break-word;
@@ -114,9 +96,11 @@ span.expanded {
   text-anchor: middle;
 }
 svg.seconds-svg {
+  font-size: 14px;
   margin-bottom: 2px;
 }
 svg.blocks-svg {
+  font-size: 14px;
   margin-bottom: 2px;
   margin-top: 2px;
   margin-left: 9px;
@@ -132,10 +116,10 @@ rect.block.classified.group0 {
   fill: blue;
 }
 rect.block.classified.group1 {
-  fill: mediumorchid;
+  fill: orange;
 }
 rect.block.classified.group2 {
-  fill: orange;
+  fill: mediumorchid;
 }
 .brush .extent {
   stroke: red;
@@ -148,10 +132,10 @@ rect.block.classified.group2 {
   fill: blue;
 }
 .brush.group1.classified rect.extent {
-  fill: mediumorchid;
+  fill: orange;
 }
 .brush.group2.classified rect.extent {
-  fill: orange;
+  fill: mediumorchid;
 }
 .plain-text span {
   margin-right: 20px;
@@ -211,7 +195,7 @@ body:not(.loaded) > *.hide-if-loaded {
   cursor: pointer;
 }
 #svgs-container {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 #wavesurfer-container {
   margin-left: 10px;
@@ -221,11 +205,13 @@ body:not(.loaded) > *.hide-if-loaded {
 .solid {
   min-width: 360px;
   max-width: 620px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 #wavesurfer-container.brush-enabled wave wave,
 #wavesurfer-container.brush-enabled wave canvas {
   pointer-events: none;
 }
-#key-pressed {
-  text-align: center;
+#key-pressed-label {
+  text-align: left;
 }
