@@ -13,9 +13,10 @@ groupsArray.forEach(function(d, i) {
 });
 var minPxPerSec = 20;
 var secondsHeight = 20;
-var blocksHeight = 50;
-var blocksPerSec = 10 ;
+var blocksHeight = 60;
+var blocksPerSec = 10;
 var playbackSpeed = 1.0;
+var svgsMargin = 10;
 // var brushMargin = 2;
 var wavesurferOpts = {
     height        : 128,
@@ -65,6 +66,10 @@ var speedLabel = body.select('#speed-label');
 var speedSlider = body.select('#speed-slider');
 var exportDataButton = body.select('#export-data-button');
 var debugContainer = body.select('#debug-container');
+var playerLine = body.select('#player-line');
+
+var wavePlaying;
+document.querySelector('wave wave')
 
 var waveformWidth, numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat, exportedData;
 var symbols;
@@ -178,6 +183,7 @@ function Main() {
 	wavesurferContainer.selectAll('wave')
 		.style('width', waveformWidth+'px')
 		.style('height', wavesurferOpts.height+'px');
+	wavePlaying = wavesurferContainer.select('wave wave');
 
 	blocksData = [];
 	for (var groupIndex=0; groupIndex<(groupsArray.length); groupIndex++) {
@@ -289,7 +295,7 @@ function Main() {
 		.attr('height', secondsHeight)
 		.append('g')
 			.attr('class', 'text-origin')
-			.attr('transform', 'translate(10,0)');
+			.attr('transform', 'translate('+svgsMargin+',0)');
 	var secondLabels = secondsSvg.selectAll('text.label').data(d3.range(numSeconds+1));
 	secondLabels.enter().append('text')
 		.classed('label', true)
@@ -316,6 +322,7 @@ function Main() {
 		oldTime = progress*wavesurfer.getDuration();
 		secondsFloat = Math.round(10*oldTime)/10;
 		currentTimeLabel.text(secondsFloat.toFixed(1)+' s');
+		UpdatePlayerLine();
 		// UpdateBlocks('seek');
 	});
 	wavesurfer.on('finish', function() {
@@ -424,6 +431,9 @@ function Main() {
 		SetLoadedClass('loaded');
 		UpdateBlocks('load');
 		blocksSvgs[0][0].focus();
+		playerLine
+			.style('height', appContainer.node().getBoundingClientRect().height+'px')
+			.style('top', appContainer.node().getBoundingClientRect().top+'px');
 	}, 100);
 
 	function IsClassed(symbol) {
@@ -619,9 +629,15 @@ function Main() {
 	// 	}
 	// };
 
+	function UpdatePlayerLine() {
+		playerLine
+			.style('left', (0+wavePlaying.node().getBoundingClientRect().right)+'px');
+	};
+
 	function UpdateBlocks(source) {
 		if (body.classed('loaded') === false) return;
 		currentTimeLabel.text(secondsFloat.toFixed(1)+'s');
+		UpdatePlayerLine();
 		if (symbols.length === 0) return;
 		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
 		if (activeGroup === -1) return;
