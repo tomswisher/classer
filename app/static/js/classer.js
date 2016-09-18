@@ -67,12 +67,8 @@ var speedSlider = body.select('#speed-slider');
 var exportDataButton = body.select('#export-data-button');
 var debugContainer = body.select('#debug-container');
 var playerLine = body.select('#player-line');
-
-var wavePlaying;
-document.querySelector('wave wave')
-
-var waveformWidth, numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat, exportedData;
-var symbols;
+var wavePlaying, waveformWidth;
+var numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat, exportedData, symbols;
 // var zoomValue;
 // var brushes, brushNodes, oldExtent, isResizing;
 // var blocksIndexToPx = d3.scale.linear();
@@ -110,7 +106,7 @@ wavesurfer.on('error', function(xhrError) {
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	// SetLoadedClass('loaded');
-	loadingLabel.text('Hold Z to apply class, X to remove class, and Shift/Tab to switch class rows');
+	loadingLabel.text('Hold X to apply class, Z to remove class, Shift/Tab to switch class rows');
 	Main();
 });
 
@@ -308,11 +304,11 @@ function Main() {
 		if (time < oldTime) return; // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
 		secondsFloat = Math.round(10*time)/10;
-		if (secondsFloat === wavesurfer.getDuration()) {
-			stopButton.on('mousedown')();
-			return;
-		}
-		if (secondsFloat !== oldSecondsFloat) {
+		// if (secondsFloat === wavesurfer.getDuration()) {
+		// 	stopButton.on('mousedown')();
+		// 	return;
+		// }
+		if (secondsFloat !== oldSecondsFloat && secondsFloat !== wavesurfer.getDuration()) {
 			oldSecondsFloat = secondsFloat;
 			UpdateBlocks('audioprocess');
 		}
@@ -325,9 +321,13 @@ function Main() {
 		UpdatePlayerLine();
 		// UpdateBlocks('seek');
 	});
+	wavesurfer.on('play', function() {
+		// When play starts.
+		UpdateBlocks('audioprocess');
+	});
 	wavesurfer.on('finish', function() {
 		// – When it finishes playing.
-		stopButton.on('mousedown')();
+		wavesurfer.backend.pause();
 	});
 	// wavesurfer.on('zoom', function(minPxPerSec) {
 	// 	On zooming. Callback will receive (integer) minPxPerSec.
@@ -341,10 +341,6 @@ function Main() {
 	// 	// When audio is paused.
 	// 	if (logs) console.log('pause');
 	// });
-	// wavesurfer.on('play', function() {
-	// 	// When play starts.
-	// 	if (logs) console.log('play');
-	// });
 	// wavesurfer.on('scroll', function(scrollEvent) {
 	// 	// When the scrollbar is moved. Callback will receive a ScrollEvent object.
 	// 	if (logs) console.log('scroll');
@@ -354,9 +350,13 @@ function Main() {
 	playPauseButton
         .text('Play')
 		.on('mousedown', function() {
-			wavesurfer.playPause();
-			playPauseButton
-				.text(wavesurfer.backend.isPaused() ? 'Play' : 'Pause');
+			if (secondsFloat === wavesurfer.getDuration()) {
+				wavesurfer.backend.pause();
+				stopButton.on('mousedown')();
+			} else {
+				wavesurfer.playPause();
+				playPauseButton.text(wavesurfer.backend.isPaused()?'Play':'Pause');
+			}
 		});
 
 	stopButton
@@ -451,17 +451,17 @@ function Main() {
 	};
 
 	function HandleKeyEvent(event) {
-		// if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
-
+		if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
+		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
 		if (event.code === 'Space') {
 			event.preventDefault();
 			if (event.type === 'keydown') {
 				playPauseButton.node().dispatchEvent(new Event('mousedown'));
+				if (activeGroup === -1) blocksSvgs[0][0].focus();
 			}
 			return;
 		}
 		if (event.key === 'Shift' && event.type === 'keydown') {
-			var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
 			if (activeGroup === -1 || activeGroup === groupsArray.length-1) {
 				blocksSvgs[0][0].focus();
 			} else {
@@ -469,25 +469,32 @@ function Main() {
 			}
 			return;
 		}
-		if (event.key.toUpperCase() === 'J' && event.type === 'keydown') {
+		if (event.key === 'CapsLock') return;
+		var newSymbol = event.key.toUpperCase();
+		if (newSymbol === 'J' && event.type === 'keydown') {
 			secondsFloat = Math.max(secondsFloat-1, 0);
 			wavesurfer.seekTo(secondsFloat/numSeconds);
 			return;
 		}
-		if (event.key.toUpperCase() === 'K' && event.type === 'keydown') {
+		if (newSymbol === 'K' && event.type === 'keydown') {
 			playPauseButton.node().dispatchEvent(new Event('mousedown'));
 			return;
 		}
-		if (event.key.toUpperCase() === 'L' && event.type === 'keydown') {
-			secondsFloat = Math.min(secondsFloat+1, wavesurfer.getDuration());
+		if (newSymbol === 'L' && event.type === 'keydown') {
+			if (secondsFloat+1 >= wavesurfer.getDuration()) {
+				secondsFloat = wavesurfer.getDuration();
+				wavesurfer.backend.pause();
+			} else {
+				secondsFloat = secondsFloat+1;
+			}
 			wavesurfer.seekTo(secondsFloat/numSeconds);
 			return;
 		}
 
-		var symbolIndex = symbols.indexOf(event.key);
+		var symbolIndex = symbols.indexOf(newSymbol);
 		if (event.type === 'keydown') {
 			if (symbolIndex === -1) {
-				symbols.push(event.key);
+				symbols.push(newSymbol);
 			}
 		}
 		if (event.type === 'keyup') {
