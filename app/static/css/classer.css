@@ -216,10 +216,11 @@ body:not(.loaded) > *.hide-if-loaded {
   pointer-events: none;
 }
 #player-line {
+  pointer-events: none;
   position: absolute;
   background: black;
   height: 100px;
-  width: 1px;
+  width: 2px;
 }
 #key-pressed-label {
   text-align: left;

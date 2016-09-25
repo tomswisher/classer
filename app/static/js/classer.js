@@ -5,8 +5,8 @@ var logs = true;
 var debug = false;
 var groupsArray = [
 	{'name':'Laughter',},
-	// {'name':'Speech',  },
-	{'name':'Clapping',},
+	{'name':'Speech',  },
+	// {'name':'Clapping',},
 ];
 groupsArray.forEach(function(d, i) {
 	d.color = d3.select('span.color-ref.group'+i).style('color');
@@ -68,18 +68,10 @@ var exportDataButton = body.select('#export-data-button');
 var debugContainer = body.select('#debug-container');
 var playerLine = body.select('#player-line');
 var wavePlaying, waveformWidth;
-var numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat, exportedData, symbols;
+var numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
+var exportedData, symbols, previousGroup;
 // var zoomValue;
 // var brushes, brushNodes, oldExtent, isResizing;
-// var blocksIndexToPx = d3.scale.linear();
-// var keyToSymbol = {
-// 	// 32:' ',
-// 	48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',
-// 	65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',
-// 	// 188:',',190:'.',
-// };
-var letterArray = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
-var numberArray = ['0','1','2','3','4','5','6','7','8','9'];
 
 var trackPromptText = 'Click to choose a track';
 // var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
@@ -106,13 +98,13 @@ wavesurfer.on('error', function(xhrError) {
 wavesurfer.on('ready', function() {
 	// When audio is loaded, decoded and the waveform drawn.
 	// SetLoadedClass('loaded');
-	loadingLabel.text('Hold X to apply class, Z to remove class, Shift/Tab to switch class rows');
+	loadingLabel.text('Space = play & pause, X = apply class, Z = remove class, Arrows & IJKL = move');
 	Main();
 });
 
 loadingLabel.text('');
 trackLoadButton
-	.on('mousedown', function() {
+	.on('click', function() {
 		SetLoadedClass('unloaded');
 		$(document).off();
 		svgsContainer.selectAll('*').remove();
@@ -122,9 +114,11 @@ trackLoadButton
 		wavesurfer.load('../static/audio/'+trackURL);
 	});
 trackClearButton
-	.on('mousedown', function() {
+	.on('click', function() {
 		SetLoadedClass('unloaded');
-		stopButton.on('mousedown')();
+		stopButton.node().dispatchEvent(new Event('click'));
+		speedSlider.node().value = '1.0';
+		speedSlider.node().dispatchEvent(new Event('change'));
 		$(document).off();
 		svgsContainer.selectAll('*').remove();
 		loadingLabel.text('');
@@ -134,11 +128,16 @@ trackClearButton
 	});
 trackURLLabel
 	.text((trackURL !== defaultTrackURL) ? trackURL : trackPromptText)
-	.on('mousedown', function() {
+	.on('click', function() {
 		if (!wavesurfer.backend.isPaused()) {
-			playPauseButton.on('mousedown')();
+			playPauseButton.node().dispatchEvent(new Event('click'));
 		}
 		trackInput.node().click();
+	})
+	.on('keydown', function() {
+		if (d3.event.code === 'Enter') {
+			this.dispatchEvent(new Event('click'));
+		}
 	});
 trackInput
     .on('change', function() {
@@ -162,6 +161,7 @@ function SetLoadedClass(state) {
 };
 
 function Main() {
+	previousGroup = 0;
 	oldTime = 0;
 	oldSecondsFloat = 0;
 	secondsFloat = 0;
@@ -211,7 +211,7 @@ function Main() {
 				.attr('width', minPxPerSec/blocksPerSec)
 				.attr('height', blocksHeight)
 				.on('mousedown', function(d, i) {
-					// if (logs) console.log('seekTo '+d.time/numSeconds+'s');
+					if (logs) console.log('seekTo '+d.time/numSeconds+'s');
 					wavesurfer.seekTo(d.time/numSeconds);
 				});
 			// brushes[groupIndex] = d3.svg.brush()
@@ -301,11 +301,11 @@ function Main() {
 
 	wavesurfer.on('audioprocess', function(time) {
 		// Fires continuously as the audio plays. Also fires on seeking.
-		if (time < oldTime) return; // bug in audioprocess that sets time to 0.xxx secondsFloat
+		if (time < oldTime) { return; } // bug in audioprocess that sets time to 0.xxx secondsFloat
 		oldTime = time;
 		secondsFloat = Math.round(10*time)/10;
 		// if (secondsFloat === wavesurfer.getDuration()) {
-		// 	stopButton.on('mousedown')();
+		// 	stopButton.node().dispatchEvent(new Event('click'));
 		// 	return;
 		// }
 		if (secondsFloat !== oldSecondsFloat && secondsFloat !== wavesurfer.getDuration()) {
@@ -349,10 +349,10 @@ function Main() {
 
 	playPauseButton
         .text('Play')
-		.on('mousedown', function() {
+		.on('click', function() {
 			if (secondsFloat === wavesurfer.getDuration()) {
 				wavesurfer.backend.pause();
-				stopButton.on('mousedown')();
+				stopButton.node().dispatchEvent(new Event('click'));
 			} else {
 				wavesurfer.playPause();
 				playPauseButton.text(wavesurfer.backend.isPaused()?'Play':'Pause');
@@ -360,9 +360,9 @@ function Main() {
 		});
 
 	stopButton
-		.on('mousedown', function() {
+		.on('click', function() {
 			if (wavesurfer.backend.isPaused() === false) {
-				playPauseButton.on('mousedown')();
+				playPauseButton.node().dispatchEvent(new Event('click'));
 			}
 			oldTime = 0;
 			secondsFloat = 0;
@@ -372,7 +372,8 @@ function Main() {
 		});
 
     speedSlider
-        .on('change', function() {
+        .on('change', function(thing) {
+        	console.log('speedSlider', this.value);
         	// ClearBrushes();
             playbackSpeed = this.value;
             speedLabel.text('Playback Speed: x '+parseFloat(playbackSpeed).toFixed(1));
@@ -413,7 +414,8 @@ function Main() {
 	// 	});
 
 	exportDataButton
-		.on('mousedown', function() {
+		.on('click', function() {
+			stopButton.node().dispatchEvent(new Event('click'));
 			ExportData();
 		});
 
@@ -451,36 +453,37 @@ function Main() {
 	};
 
 	function HandleKeyEvent(event) {
+		if (body.classed('loaded') === false) { return; }
 		if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
-		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
+		
+		if (event.key === 'Tab') { return; }
+		if (event.key === 'Enter') { return; }
+		if (event.key === 'CapsLock') {
+			event.preventDefault();
+		}
 		if (event.code === 'Space') {
 			event.preventDefault();
 			if (event.type === 'keydown') {
-				playPauseButton.node().dispatchEvent(new Event('mousedown'));
-				if (activeGroup === -1) blocksSvgs[0][0].focus();
+				playPauseButton.node().dispatchEvent(new Event('click'));
 			}
-			return;
 		}
-		if (event.key === 'Shift' && event.type === 'keydown') {
-			if (activeGroup === -1 || activeGroup === groupsArray.length-1) {
-				blocksSvgs[0][0].focus();
-			} else {
-				blocksSvgs[0][activeGroup+1].focus();
-			}
-			return;
-		}
-		if (event.key === 'CapsLock') return;
 		var newSymbol = event.key.toUpperCase();
-		if (newSymbol === 'J' && event.type === 'keydown') {
+		if (['Z','X','I','K','J','L','ARROWUP','ARROWDOWN','ARROWLEFT','ARROWRIGHT'].indexOf(newSymbol) === -1) { return; }
+		if (document.activeElement === speedSlider.node()) { return; }
+
+		event.preventDefault();
+		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
+		if ((newSymbol === 'I' || newSymbol === 'ARROWUP') && event.type === 'keydown') {
+			activeGroup = Math.max(0, activeGroup-1);
+		}
+		if ((newSymbol === 'K' || newSymbol === 'ARROWDOWN') && event.type === 'keydown') {
+			activeGroup = Math.min(activeGroup+1, groupsArray.length-1);
+		}
+		if ((newSymbol === 'J' || newSymbol === 'ARROWLEFT') && event.type === 'keydown') {
 			secondsFloat = Math.max(secondsFloat-1, 0);
 			wavesurfer.seekTo(secondsFloat/numSeconds);
-			return;
 		}
-		if (newSymbol === 'K' && event.type === 'keydown') {
-			playPauseButton.node().dispatchEvent(new Event('mousedown'));
-			return;
-		}
-		if (newSymbol === 'L' && event.type === 'keydown') {
+		if ((newSymbol === 'L' || newSymbol === 'ARROWRIGHT') && event.type === 'keydown') {
 			if (secondsFloat+1 >= wavesurfer.getDuration()) {
 				secondsFloat = wavesurfer.getDuration();
 				wavesurfer.backend.pause();
@@ -488,8 +491,13 @@ function Main() {
 				secondsFloat = secondsFloat+1;
 			}
 			wavesurfer.seekTo(secondsFloat/numSeconds);
-			return;
 		}
+		if (activeGroup === -1) {
+			activeGroup = previousGroup;
+		}
+		previousGroup = activeGroup;
+		blocksSvgs[0][activeGroup].focus();
+		if (['Z','X'].indexOf(newSymbol) === -1) { return; }
 
 		var symbolIndex = symbols.indexOf(newSymbol);
 		if (event.type === 'keydown') {
@@ -502,33 +510,6 @@ function Main() {
 				symbols.splice(symbolIndex, 1);
 			}
 		}
-
-		// if (logs) console.log(event.type, event.key, symbols);
-		// UpdateBlocks(event.type+' '+event.key);
-		
-		// if (event.type === 'keydown');
-		// switch (event.which) {
-		// 	case 9: // Tab
-		// 		// event.preventDefault();
-		// 		var tabIndex = blocksSvgs[0].indexOf(document.activeElement);
-		// 		break;
-		// 	// case 16: // Shift
-		// 	// 	// event.preventDefault();
-		// 	// 	var tabIndex = blocksSvgs[0].indexOf(document.activeElement);
-		// 	// 	break;
-		// 	case 13: // Enter
-		// 		event.preventDefault();
-		// 		event.target.dispatchEvent(new Event('mousedown'));
-		// 		break;
-		// 	case 32: // Space
-		// 		event.preventDefault();
-		// 		playPauseButton.node().dispatchEvent(new Event('mousedown'));
-		// 		break;
-		// 	default:
-		// 		symbols[0] = keyToSymbol[event.which];
-		// 		UpdateBlocks('keydown '+event.which);
-		// }
-		// UpdateKeyPressedLabel(symbols[0]);
 	};
 
 	// function OnKeyup(event) {
@@ -551,11 +532,11 @@ function Main() {
 	// 		// 	break;
 	// 		case 13: // Enter
 	// 			event.preventDefault();
-	// 			event.target.dispatchEvent(new Event('mousedown'));
+	// 			event.target.dispatchEvent(new Event('click'));
 	// 			break;
 	// 		case 32: // Space
 	// 			event.preventDefault();
-	// 			playPauseButton.node().dispatchEvent(new Event('mousedown'));
+	// 			playPauseButton.node().dispatchEvent(new Event('click'));
 	// 			break;
 	// 		default:
 	// 			symbols[0] = keyToSymbol[event.which];
@@ -638,25 +619,21 @@ function Main() {
 
 	function UpdatePlayerLine() {
 		playerLine
-			.style('left', (0+wavePlaying.node().getBoundingClientRect().right)+'px');
+			.style('left', (-1+wavePlaying.node().getBoundingClientRect().right)+'px');
 	};
 
 	function UpdateBlocks(source) {
-		if (body.classed('loaded') === false) return;
+		if (body.classed('loaded') === false) { return; }
 		currentTimeLabel.text(secondsFloat.toFixed(1)+'s');
 		UpdatePlayerLine();
-		if (symbols.length === 0) return;
+		if (symbols.length === 0) { return; }
 		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
-		if (activeGroup === -1) return;
-		if (logs) console.log(secondsFloat.toFixed(1)+'s', source, activeGroup, symbols);
-		
-		// blocksSvgs[0][activeGroup].focus();
-		// UpdateBrushes(activeGroup, IsClassed(symbols[0]));
-		// if (brushes[activeGroup].empty()) {
-
+		if (activeGroup === -1) { return; }
 		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
 		var isClassed = IsClassed(symbols[0]);
-		if (isClassed === null || isClassed === blocksData[activeGroup][blocksIndex]['classified']) return;
+		if (isClassed === null || isClassed === blocksData[activeGroup][blocksIndex]['classified']) { return; }
+
+		if (logs) console.log(secondsFloat.toFixed(1)+'s', source, activeGroup, symbols);
 	    blocksData[activeGroup][blocksIndex]['classified'] = isClassed;
 	    d3.select(blocksRects[activeGroup][0][blocksIndex]).classed('classified', isClassed);
 
@@ -676,15 +653,15 @@ function Main() {
 	    // 		// if (logs) console.log('Looping over key '+keyText+'" skipping:', skippedKeys);
 	    // 		$.each(myObject, function(key, value) {
 	    // 			// if (logs) console.log(indentString+'"'+key+'", '+typeof(value));
-	    // 			if (skippedKeys.indexOf(key) !== -1) return;
-	    // 			if (usedKeyHash[key] !== undefined) return;
+	    // 			if (skippedKeys.indexOf(key) !== -1) { return; }
+	    // 			if (usedKeyHash[key] !== undefined) { return; }
 	    // 			if (typeof(value) === 'function' && testRegExp.test(key) === true) {
 	    // 				// if (logs) console.log(indentString, value, myObject);
 	    // 				valueString = JSON.stringify(value.apply(myObject));
 	    // 			} else {
 	    // 				valueString = JSON.stringify(value);
 	    // 			}
-	    // 			if ([undefined, '{}'].indexOf(valueString) !== -1) return;
+	    // 			if ([undefined, '{}'].indexOf(valueString) !== -1) { return; }
 	    // 			if (typeof(value) === 'object' && value !== null) {
 	    // 				// if (logs) console.log(indentString+'Stepping in to  "'+key+'" from "'+keyText+'" skipping:', skippedKeys);
 	    // 				addKeyValuePairs(value, key, indent+1);
