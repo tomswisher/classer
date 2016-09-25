@@ -11,6 +11,7 @@ var groupsArray = [
 groupsArray.forEach(function(d, i) {
 	d.color = d3.select('span.color-ref.group'+i).style('color');
 });
+var arrowJumpDuration = 0.5;
 var minPxPerSec = 20;
 var secondsHeight = 20;
 var blocksHeight = 60;
@@ -310,7 +311,7 @@ function Main() {
 		// }
 		if (secondsFloat !== oldSecondsFloat && secondsFloat !== wavesurfer.getDuration()) {
 			oldSecondsFloat = secondsFloat;
-			UpdateBlocks('audioprocess');
+			UpdateBlock('audioprocess', parseInt(secondsFloat*blocksPerSec));
 		}
 	});
 	wavesurfer.on('seek', function(progress) {
@@ -319,11 +320,11 @@ function Main() {
 		secondsFloat = Math.round(10*oldTime)/10;
 		currentTimeLabel.text(secondsFloat.toFixed(1)+' s');
 		UpdatePlayerLine();
-		// UpdateBlocks('seek');
+		// UpdateBlock('seek', parseInt(secondsFloat*blocksPerSec));
 	});
 	wavesurfer.on('play', function() {
 		// When play starts.
-		UpdateBlocks('audioprocess');
+		UpdateBlock('audioprocess', parseInt(secondsFloat*blocksPerSec));
 	});
 	wavesurfer.on('finish', function() {
 		// – When it finishes playing.
@@ -378,13 +379,13 @@ function Main() {
             playbackSpeed = this.value;
             speedLabel.text('Playback Speed: x '+parseFloat(playbackSpeed).toFixed(1));
             wavesurfer.setPlaybackRate(playbackSpeed);
-            // UpdateBlocks('speed-slider');
+            // UpdateBlock('speed-slider', parseInt(secondsFloat*blocksPerSec));
         });
 
 	// zoomSlider
 	// 	.on('change', function() {
 	// 		ClearBrushes();
- //            UpdateBlocks('zoom-sliderStart');
+ //            UpdateBlock('zoom-sliderStart', parseInt(secondsFloat*blocksPerSec));
 	// 		zoomValue = Number(this.value);
 	// 		minPxPerSec = wsZoomScale(zoomValue);
 	// 		wavesurfer.zoom(minPxPerSec);
@@ -410,7 +411,7 @@ function Main() {
 	// 			.attr({
 	// 				x: function(d) { return d*minPxPerSec; },
 	// 			});
- //            UpdateBlocks('zoom-sliderEnd');
+ //            UpdateBlock('zoom-sliderEnd', parseInt(secondsFloat*blocksPerSec));
 	// 	});
 
 	exportDataButton
@@ -431,7 +432,7 @@ function Main() {
 	wavesurfer.seekTo(0);
 	setTimeout(function() {
 		SetLoadedClass('loaded');
-		UpdateBlocks('load');
+		UpdateBlock('load', parseInt(secondsFloat*blocksPerSec));
 		blocksSvgs[0][0].focus();
 		playerLine
 			.style('height', appContainer.node().getBoundingClientRect().height+'px')
@@ -454,7 +455,7 @@ function Main() {
 
 	function HandleKeyEvent(event) {
 		if (body.classed('loaded') === false) { return; }
-		if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
+		// if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
 		
 		if (event.key === 'Tab') { return; }
 		if (event.key === 'Enter') { return; }
@@ -479,16 +480,27 @@ function Main() {
 		if ((newSymbol === 'K' || newSymbol === 'ARROWDOWN') && event.type === 'keydown') {
 			activeGroup = Math.min(activeGroup+1, groupsArray.length-1);
 		}
+		var oldSecondsFloat = secondsFloat;
 		if ((newSymbol === 'J' || newSymbol === 'ARROWLEFT') && event.type === 'keydown') {
-			secondsFloat = Math.max(secondsFloat-1, 0);
+			secondsFloat = Math.max(secondsFloat-arrowJumpDuration, 0);
+			if (symbols[0] !== undefined) {
+				for (var i=parseInt(oldSecondsFloat*blocksPerSec); i>parseInt(secondsFloat*blocksPerSec); i--) {
+					UpdateBlock('J/ARROWLEFT', parseInt(i));
+				}
+			}
 			wavesurfer.seekTo(secondsFloat/numSeconds);
 		}
 		if ((newSymbol === 'L' || newSymbol === 'ARROWRIGHT') && event.type === 'keydown') {
-			if (secondsFloat+1 >= wavesurfer.getDuration()) {
+			if (secondsFloat+arrowJumpDuration >= wavesurfer.getDuration()) {
 				secondsFloat = wavesurfer.getDuration();
 				wavesurfer.backend.pause();
 			} else {
-				secondsFloat = secondsFloat+1;
+				secondsFloat = secondsFloat+arrowJumpDuration;
+			}
+			if (symbols[0] !== undefined) {
+				for (var i=parseInt(oldSecondsFloat*blocksPerSec); i<parseInt(secondsFloat*blocksPerSec); i++) {
+					UpdateBlock('L/ARROWRIGHT', parseInt(i));
+				}
 			}
 			wavesurfer.seekTo(secondsFloat/numSeconds);
 		}
@@ -514,7 +526,7 @@ function Main() {
 
 	// function OnKeyup(event) {
 	// 	// if (logs) console.log('keyup', symbols[0]);
-	// 	// UpdateBlocks('keyup '+event.which);
+	// 	// UpdateBlock('keyup '+event.which, parseInt(secondsFloat*blocksPerSec));
 	// 	symbols[0] = undefined;
 	// 	// UpdateKeyPressedLabel(symbols[0]);
 	// };
@@ -540,14 +552,14 @@ function Main() {
 	// 			break;
 	// 		default:
 	// 			symbols[0] = keyToSymbol[event.which];
-	// 			UpdateBlocks('keydown '+event.which);
+	// 			UpdateBlock('keydown '+event.which, parseInt(secondsFloat*blocksPerSec));
 	// 	}
 	// 	// UpdateKeyPressedLabel(symbols[0]);
 	// };
 
 	// function OnKeyup(event) {
 	// 	// if (logs) console.log('keyup', symbols[0]);
-	// 	// UpdateBlocks('keyup '+event.which);
+	// 	// UpdateBlock('keyup '+event.which, parseInt(secondsFloat*blocksPerSec));
 	// 	symbols[0] = undefined;
 	// 	// UpdateKeyPressedLabel(symbols[0]);
 	// };
@@ -622,18 +634,17 @@ function Main() {
 			.style('left', (-1+wavePlaying.node().getBoundingClientRect().right)+'px');
 	};
 
-	function UpdateBlocks(source) {
+	function UpdateBlock(source, blocksIndex) {
 		if (body.classed('loaded') === false) { return; }
 		currentTimeLabel.text(secondsFloat.toFixed(1)+'s');
 		UpdatePlayerLine();
 		if (symbols.length === 0) { return; }
 		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
 		if (activeGroup === -1) { return; }
-		var blocksIndex = parseInt(secondsFloat*blocksPerSec);
+		if (logs) console.log(secondsFloat.toFixed(1)+'s', source, blocksIndex, activeGroup, symbols);
 		var isClassed = IsClassed(symbols[0]);
 		if (isClassed === null || isClassed === blocksData[activeGroup][blocksIndex]['classified']) { return; }
 
-		if (logs) console.log(secondsFloat.toFixed(1)+'s', source, activeGroup, symbols);
 	    blocksData[activeGroup][blocksIndex]['classified'] = isClassed;
 	    d3.select(blocksRects[activeGroup][0][blocksIndex]).classed('classified', isClassed);
 
