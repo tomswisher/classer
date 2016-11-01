@@ -18,7 +18,6 @@ var blocksHeight = 60;
 var blocksPerSec = 10;
 var playbackSpeed = 1.0;
 var svgsMargin = 10;
-// var brushMargin = 2;
 var wavesurferOpts = {
     height        : 128,
     // waveColor     : 'black', //'#999',
@@ -111,7 +110,6 @@ trackLoadButton
 		svgsContainer.selectAll('*').remove();
 		loadingLabel.text('');
 		trackURLLabel.text(trackURL);
-		// assumes you put audio in folder /static/audio
 		wavesurfer.load('../static/audio/'+trackURL);
 	});
 trackClearButton
@@ -125,6 +123,7 @@ trackClearButton
 		loadingLabel.text('');
 		trackURLLabel.text(trackPromptText);
 		trackURL = defaultTrackURL;
+		trackInput.node().value = ''; // Clear the FileList
 		sessionStorage.setItem('trackURL', defaultTrackURL);
 	});
 trackURLLabel
@@ -189,21 +188,11 @@ function Main() {
 	}
 	symbols = [];
 	blocksRects = [];
-	// isResizing = false;
-	// oldExtent = null;
-	// brushes = [];
-	// brushNodes = [];
-	// blocksIndexToPx
-	// 	.domain([0, blocksData[0].length])
-	// 	.range([0, waveformWidth]);
 	blocksSvgs = svgsContainer.selectAll('svg.blocks-svg').data(blocksData).enter().append('svg')
 		.attr('class', 'blocks-svg inlineblock')
 		.attr('width', waveformWidth)
 		.attr('height', blocksHeight)
 		.attr('tabindex', function(d, i) { return 4+i; })
-		// .on('mousedown', function(d, groupIndex) {
-		// 	SwitchGroup(groupIndex);
-		// })	
 		.each(function(d, groupIndex) {
 			blocksRects[groupIndex] = d3.select(this).selectAll('rect.block').data(d).enter().append('rect')
 				.attr('class', function(d) { return 'block group'+groupIndex; })
@@ -215,75 +204,6 @@ function Main() {
 					if (logs) console.log('seekTo '+d.time/numSeconds+'s');
 					wavesurfer.seekTo(d.time/numSeconds);
 				});
-			// brushes[groupIndex] = d3.svg.brush()
-			// 	.x(blocksIndexToPx)
-			// 	.on('brushstart', function() {
-			// 		if (activeGroup !== groupIndex) {
-			// 			SwitchGroup(groupIndex);
-			// 			// SwitchBrush(activeGroup);
-			// 			return;
-			// 		}
-			// 		var brush = brushes[activeGroup];
-			// 		// if (logs) console.log(activeGroup+'\tbrushstart', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
-			// 	})
-			// 	.on('brush', function() {
-			// 		var brush = brushes[activeGroup];
-			// 		// if (logs) console.log(activeGroup+'\tbrush1    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
-			// 		SnapBrush(groupIndex, Math.round(brush.extent()[0]), Math.round(brush.extent()[1]));
-			// 		// if (logs) console.log(activeGroup+'\tbrush2    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
-
-			// 		if (!isResizing) {
-			// 			if (!blocksData[groupIndex][brush.extent()[0]].classified) { 
-			// 				SnapBrush(groupIndex, 0, 0);
-			// 				oldExtent = null;
-			// 			} else {
-			// 				ExpandBrush(groupIndex, brush.extent()[0]);
-			// 				if (logs) console.log('ChangeBlocks', groupIndex);
-			// 				ChangeBlocks(activeGroup, brush.extent()[0], brush.extent()[1], false);
-			// 				isResizing = true;
-			// 				oldExtent = [brush.extent()[0], brush.extent()[1]];
-			// 				// brush.event(d3.select(brushNodes[0]));
-			// 			}
-			// 		} else {
-			// 			if (d3.event.sourceEvent.type === 'mouseup') {
-			// 				SnapBrush(groupIndex, oldExtent[0], oldExtent[1]);
-			// 			} else if (brush.empty() && oldExtent !== null && oldExtent[0] !== oldExtent[1]) {
-			// 				if (logs) console.log('ChangeBlocks', groupIndex);
-			// 				ChangeBlocks(activeGroup, oldExtent[0], oldExtent[1], IsClassed(symbols[0]));
-			// 				isResizing = false;
-			// 				oldExtent = null;
-			// 			} else {
-			// 				oldExtent = [brush.extent()[0], brush.extent()[1]];
-			// 			}
-			// 		}
-			// 		// if (logs) console.log(activeGroup+'\tbrush3    ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
-			// 	})
-			// 	.on('brushend', function() {
-			// 		var brush = brushes[activeGroup];
-			// 		// if (logs) console.log(activeGroup+'\tbrushend  ', isResizing, (brush.empty()?'empty':'full '), oldExtent, brush.extent());
-
-			// 		// var currentExtent = brushes[activeGroup].extent();
-			// 		// ChangeBlocks(activeGroup, currentExtent[0], currentExtent[1], IsClassed(symbols[0]));
-
-			// 		// if (logs) console.log('brushend  ', oldExtents[groupIndex], brush.extent());
-			// 		// isBrushing = false;
-			// 		// oldExtents[groupIndex] = [brush.extent()[0], brush.extent()[1]];
-			// 		// if (brush.extent()[0] !== oldExtents[groupIndex][0] && brush.extent()[1] !== oldExtents[groupIndex][1]) {
-			// 		// 	willChangeBlocks = true;
-			// 		// }
-			// 		// var brushExtentDiff = brush.extent()[1]-brush.extent()[0];
-			// 		// if (brushExtentDiff > 1) {
-			// 		// 	oldExtents[groupIndex] = [brush.extent()[0], brush.extent()[1]];	
-			// 		// }
-			// 		// if (logs) console.log('brushend', brushes[groupIndex].extent(), oldExtents[groupIndex], brushExtentDiff);
-			// 	});
-			// brushNodes[groupIndex] = d3.select(this).append('g')
-			// 	.attr('class', 'brush brushdisabled group'+groupIndex)
-			// 	.call(brushes[groupIndex]);
-			// brushNodes[groupIndex].selectAll('rect')
-			// 	.attr('y', 0.5*brushMargin)
-			// 	.attr('height', blocksHeight-2*0.5*brushMargin)
-			// 	.style('stroke-width', brushMargin);
 		});
 
 	secondsSvg = svgsContainer.append('svg')
@@ -428,6 +348,8 @@ function Main() {
 	// 	.on('keydown', OnKeydown)
 	// 	.on('keyup', OnKeyup);
 
+	wavesurfer.play(); // Initialize the AudioBufferSourceNode
+	wavesurfer.pause();
 	wavesurfer.seekTo(1);
 	wavesurfer.seekTo(0);
 	setTimeout(function() {
@@ -485,7 +407,9 @@ function Main() {
 			secondsFloat = Math.max(secondsFloat-arrowJumpDuration, 0);
 			if (symbols[0] !== undefined) {
 				for (var i=parseInt(oldSecondsFloat*blocksPerSec); i>parseInt(secondsFloat*blocksPerSec); i--) {
-					UpdateBlock('J/ARROWLEFT', parseInt(i));
+					if (i < numSeconds*blocksPerSec) {
+						UpdateBlock('J/ARROWLEFT', i);
+					}
 				}
 			}
 			wavesurfer.seekTo(secondsFloat/numSeconds);
@@ -524,111 +448,6 @@ function Main() {
 		}
 	};
 
-	// function OnKeyup(event) {
-	// 	// if (logs) console.log('keyup', symbols[0]);
-	// 	// UpdateBlock('keyup '+event.which, parseInt(secondsFloat*blocksPerSec));
-	// 	symbols[0] = undefined;
-	// 	// UpdateKeyPressedLabel(symbols[0]);
-	// };
-
-	// function OnKeydown(event) {
-	// 	// if (logs) console.log('keydown '+symbols[0]);
-	// 	switch (event.which) {
-	// 		case 9: // Tab
-	// 			// event.preventDefault();
-	// 			var tabIndex = blocksSvgs[0].indexOf(document.activeElement);
-	// 			break;
-	// 		// case 16: // Shift
-	// 		// 	// event.preventDefault();
-	// 		// 	var tabIndex = blocksSvgs[0].indexOf(document.activeElement);
-	// 		// 	break;
-	// 		case 13: // Enter
-	// 			event.preventDefault();
-	// 			event.target.dispatchEvent(new Event('click'));
-	// 			break;
-	// 		case 32: // Space
-	// 			event.preventDefault();
-	// 			playPauseButton.node().dispatchEvent(new Event('click'));
-	// 			break;
-	// 		default:
-	// 			symbols[0] = keyToSymbol[event.which];
-	// 			UpdateBlock('keydown '+event.which, parseInt(secondsFloat*blocksPerSec));
-	// 	}
-	// 	// UpdateKeyPressedLabel(symbols[0]);
-	// };
-
-	// function OnKeyup(event) {
-	// 	// if (logs) console.log('keyup', symbols[0]);
-	// 	// UpdateBlock('keyup '+event.which, parseInt(secondsFloat*blocksPerSec));
-	// 	symbols[0] = undefined;
-	// 	// UpdateKeyPressedLabel(symbols[0]);
-	// };
-
-	// function SwitchGroup(switchingIndex) {
-	// 	// if (logs) console.log('SwitchGroup', activeGroup, switchingIndex);
-	// 	// var currentExtent = brushes[activeGroup].extent();
-	// 	// ChangeBlocks(activeGroup, currentExtent[0], currentExtent[1], IsClassed(symbols[0]));
-	// 	// ClearBrushes();
-	// 	activeGroup = switchingIndex;
-	// 	// blocksSvgs[0][activeGroup].focus();
-	// 	// oldExtent = null;
-	// 	// isResizing = false;
-	// 	// UpdateBrushes(activeGroup, IsClassed(symbols[0]));
-	// };
-
-	// function ExpandBrush(groupIndex, blocksIndex) {
-	// 	var minIndex = blocksIndex;
-	// 	var maxIndex = blocksIndex;
-	// 	while (minIndex >= 0 && blocksData[groupIndex][minIndex].classified) {
-	// 		minIndex--;
-	// 	}
-	// 	minIndex++;
-	// 	while (maxIndex < blocksData[groupIndex].length && blocksData[groupIndex][maxIndex].classified) {
-	// 		maxIndex++;
-	// 	}
-	// 	// maxIndex--;
-	// 	SnapBrush(groupIndex, minIndex, maxIndex);
-	// };
-
-	// function SnapBrush(groupIndex, minIndex, maxIndex) {
-	// 	brushNodes[groupIndex]
-	// 		.call(brushes[groupIndex].extent([minIndex, maxIndex]));
-	// };
-
-	// function SwitchBrush(groupIndex) {
-	// 	svgsContainer.selectAll('rect.group-marker')
-	// 		.classed('current', false)
-	// 		.filter(function(d, i) { return i === activeGroup; })
-	// 		.classed('current', true);
-	// };
-
-	// function UpdateBrushes(groupIndex, isClassed) {
-	// 	brushNodes[groupIndex]
-	// 		.classed('classified', isClassed);
-	// };
-
-	// function ClearBrushes() {
-	// 	for (var groupIndex=0; groupIndex<(groupsArray.length); groupIndex++) {
-	// 		// oldExtents[groupIndex] = null;
-	// 		brushNodes[groupIndex].call(brushes[groupIndex].clear());
-	// 	}
-	// };
-
-	// function ChangeBlocks(groupIndex, minIndex, maxIndex, isClassed) {
-	// 	// if (logs) console.log('ChangeBlocks', groupIndex, minIndex, maxIndex, isClassed);
-	// 	for (var blocksIndex=minIndex; blocksIndex<maxIndex; blocksIndex++) {
-	// 		ChangeBlock(groupIndex, blocksIndex, isClassed);
-	// 	}
-	// };
-
-	// function UpdateKeyPressedLabel(symbol) {
-	// 	if (symbol === undefined) {
-	// 		keyPressedLabel.text('Key Pressed: \u00A0');
-	// 	} else {
-	// 		keyPressedLabel.text('Key Pressed: '+symbol);
-	// 	}
-	// };
-
 	function UpdatePlayerLine() {
 		playerLine
 			.style('left', (-1+wavePlaying.node().getBoundingClientRect().right)+'px');
@@ -641,9 +460,11 @@ function Main() {
 		if (symbols.length === 0) { return; }
 		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
 		if (activeGroup === -1) { return; }
-		if (logs) console.log(secondsFloat.toFixed(1)+'s', source, blocksIndex, activeGroup, symbols);
+		// if (logs) console.log(secondsFloat.toFixed(1)+'s', source, blocksIndex, activeGroup, symbols);
 		var isClassed = IsClassed(symbols[0]);
-		if (isClassed === null || isClassed === blocksData[activeGroup][blocksIndex]['classified']) { return; }
+		if (isClassed === null || isClassed === blocksData[activeGroup][blocksIndex]['classified']) {
+			return;
+		}
 
 	    blocksData[activeGroup][blocksIndex]['classified'] = isClassed;
 	    d3.select(blocksRects[activeGroup][0][blocksIndex]).classed('classified', isClassed);
@@ -749,15 +570,15 @@ function Main() {
 		});
 		if (logs) console.log(exportedData.metadata);
 		if (logs) console.log(exportedData.blocksDataRefined);
-		// $.ajax({
-		// 	type: 'POST',
-		// 	url: 'exportedData',
-		// 	dataType: 'json',
-		// 	data: JSON.stringify(exportedData),
-  //           async: false,
-		// 	success: function() {
-  //               if (logs) console.log('success');
-  //           },
-		// });
+		$.ajax({
+			type: 'POST',
+			url: 'exportedData',
+			dataType: 'json',
+			data: JSON.stringify(exportedData),
+            async: false,
+			success: function() {
+                if (logs) console.log('success');
+            },
+		});
 	};
 };
