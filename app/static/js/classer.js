@@ -355,7 +355,7 @@ function Main() {
 	setTimeout(function() {
 		SetLoadedClass('loaded');
 		UpdateBlock('load', parseInt(secondsFloat*blocksPerSec));
-		blocksSvgs[0][0].focus();
+		blocksSvgs.nodes()[0].focus();
 		playerLine
 			.style('height', appContainer.node().getBoundingClientRect().height+'px')
 			.style('top', appContainer.node().getBoundingClientRect().top+'px');
@@ -395,7 +395,7 @@ function Main() {
 		if (document.activeElement === speedSlider.node()) { return; }
 
 		event.preventDefault();
-		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
+		var activeGroup = blocksSvgs.nodes().indexOf(document.activeElement);
 		if ((newSymbol === 'I' || newSymbol === 'ARROWUP') && event.type === 'keydown') {
 			activeGroup = Math.max(0, activeGroup-1);
 		}
@@ -432,7 +432,7 @@ function Main() {
 			activeGroup = previousGroup;
 		}
 		previousGroup = activeGroup;
-		blocksSvgs[0][activeGroup].focus();
+		blocksSvgs.nodes()[activeGroup].focus();
 		if (['Z','X'].indexOf(newSymbol) === -1) { return; }
 
 		var symbolIndex = symbols.indexOf(newSymbol);
@@ -458,7 +458,7 @@ function Main() {
 		currentTimeLabel.text(secondsFloat.toFixed(1)+'s');
 		UpdatePlayerLine();
 		if (symbols.length === 0) { return; }
-		var activeGroup = blocksSvgs[0].indexOf(document.activeElement);
+		var activeGroup = blocksSvgs.nodes().indexOf(document.activeElement);
 		if (activeGroup === -1) { return; }
 		// if (logs) console.log(secondsFloat.toFixed(1)+'s', source, blocksIndex, activeGroup, symbols);
 		var isClassed = IsClassed(symbols[0]);
@@ -467,7 +467,7 @@ function Main() {
 		}
 
 	    blocksData[activeGroup][blocksIndex]['classified'] = isClassed;
-	    d3.select(blocksRects[activeGroup][0][blocksIndex]).classed('classified', isClassed);
+	    d3.select(blocksRects[activeGroup].nodes()[blocksIndex]).classed('classified', isClassed);
 
 	    // if (debug) {
 	    // 	var keyValueArray = [];
