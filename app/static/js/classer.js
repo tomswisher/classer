@@ -46,27 +46,28 @@ var wavesurferOpts = {
     // autoCenter    : true,
 };
 var body = d3.select('body');
-var trackLoadButton = body.select('#track-load-button');
-var trackClearButton = body.select('#track-clear-button');
-var trackURLLabel = body.select('#track-url-label');
-var trackInput = body.select('#track-input');
-var loadingLabel = body.select('#loading-label');
-var appContainer = body.select('#app-container');
-var wavesurferContainer = body.select('#wavesurfer-container');
-var svgsContainer = body.select('#svgs-container');
+var classer = d3.select('#classer');
+var trackLoadButton = classer.select('#track-load-button');
+var trackClearButton = classer.select('#track-clear-button');
+var trackURLLabel = classer.select('#track-url-label');
+var trackInput = classer.select('#track-input');
+var loadingLabel = classer.select('#loading-label');
+var appContainer = classer.select('#app-container');
+var wavesurferContainer = classer.select('#wavesurfer-container');
+var svgsContainer = classer.select('#svgs-container');
 var secondsSvg;
 var blocksSvgs, blocksData, blocksRects;
-var playPauseButton = body.select('#play-pause-button');
-var currentTimeLabel = body.select('#current-time-label');
-var stopButton = body.select('#stop-button');
-// var keyPressedLabel = body.select('#key-pressed-label');
-// var zoomSlider = body.select('#zoom-slider');
-// var zoomLabel = body.select('#zoom-label');
-var speedLabel = body.select('#speed-label');
-var speedSlider = body.select('#speed-slider');
-var exportDataButton = body.select('#export-data-button');
-var debugContainer = body.select('#debug-container');
-var playerLine = body.select('#player-line');
+var playPauseButton = classer.select('#play-pause-button');
+var currentTimeLabel = classer.select('#current-time-label');
+var stopButton = classer.select('#stop-button');
+// var keyPressedLabel = classer.select('#key-pressed-label');
+// var zoomSlider = classer.select('#zoom-slider');
+// var zoomLabel = classer.select('#zoom-label');
+var speedLabel = classer.select('#speed-label');
+var speedSlider = classer.select('#speed-slider');
+var exportDataButton = classer.select('#export-data-button');
+var debugContainer = classer.select('#debug-container');
+var playerLine = classer.select('#player-line');
 var wavePlaying, waveformWidth;
 var numSeconds, startTime, exportTime, oldTime, oldSecondsFloat, secondsFloat;
 var exportedData, symbols, previousGroup;
@@ -77,12 +78,15 @@ var trackPromptText = 'Click to choose a track';
 // var defaultTrackURL = 'Yoko Kanno & Origa - Inner Universe (jamiemori remix).mp3';
 // var defaultTrackURL = '08 Smashed Pennies.m4a';
 var defaultTrackURL = '08_smashed_pennies_(m4a)_7.wav';
-var trackURL;
-if (sessionStorage.trackURL === undefined) {
-	trackURL = defaultTrackURL;
-	sessionStorage.setItem('trackURL', trackURL);
-} else {
-	trackURL = sessionStorage.trackURL;
+var trackURL = defaultTrackURL;
+try {
+  if (sessionStorage.trackURL === undefined) {
+    sessionStorage.setItem('trackURL', trackURL);
+  } else {
+    trackURL = sessionStorage.trackURL;
+  }
+} catch(e) {
+	console.log(e);
 }
 
 var wavesurfer = WaveSurfer.create(wavesurferOpts);
@@ -124,7 +128,11 @@ trackClearButton
 		trackURLLabel.text(trackPromptText);
 		trackURL = defaultTrackURL;
 		trackInput.node().value = ''; // Clear the FileList
-		sessionStorage.setItem('trackURL', defaultTrackURL);
+		try {
+			sessionStorage.setItem('trackURL', defaultTrackURL);
+		} catch(e) {
+			console.log(e);
+		}
 	});
 trackURLLabel
 	.text((trackURL !== defaultTrackURL) ? trackURL : trackPromptText)
@@ -140,11 +148,15 @@ trackURLLabel
 		}
 	});
 trackInput
-    .on('change', function() {
-    	trackURL = this.files[0].name;
-    	sessionStorage.setItem('trackURL', trackURL);
-    	trackURLLabel.text(trackURL);
-    });
+  .on('change', function() {
+  	trackURL = this.files[0].name;
+    try {
+      sessionStorage.setItem('trackURL', trackURL);
+    } catch(e) {
+      console.log(e);
+    }
+    trackURLLabel.text(trackURL);
+  });
 
 if (debug) { debugContainer.classed('hidden', false); }
 
@@ -154,9 +166,9 @@ if (debug) { debugContainer.classed('hidden', false); }
 
 function SetLoadedClass(state) {
 	if (state === 'loaded') {
-		body.classed('loaded', true);
+		classer.classed('loaded', true);
 	} else if (state === 'unloaded') {
-		body.classed('loaded', false);
+		classer.classed('loaded', false);
 	}
 };
 
@@ -289,7 +301,7 @@ function Main() {
 			secondsFloat = 0;
 			wavesurfer.seekTo(0);
 			currentTimeLabel.text(secondsFloat.toFixed(1)+' s');
-			body.select('wave').node().scrollLeft = 0;
+			classer.select('wave').node().scrollLeft = 0;
 		});
 
     speedSlider
@@ -376,7 +388,7 @@ function Main() {
 	};
 
 	function HandleKeyEvent(event) {
-		if (body.classed('loaded') === false) { return; }
+		if (classer.classed('loaded') === false) { return; }
 		// if (logs) console.log((event.type==='keydown'?'keydown':'keyup  '), event.key, symbols);
 		
 		if (event.key === 'Tab') { return; }
@@ -454,7 +466,7 @@ function Main() {
 	};
 
 	function UpdateBlock(source, blocksIndex) {
-		if (body.classed('loaded') === false) { return; }
+		if (classer.classed('loaded') === false) { return; }
 		currentTimeLabel.text(secondsFloat.toFixed(1)+'s');
 		UpdatePlayerLine();
 		if (symbols.length === 0) { return; }
