@@ -8,9 +8,6 @@ var groupsArray = [
 	{'name':'Speech',  },
 	// {'name':'Clapping',},
 ];
-groupsArray.forEach(function(d, i) {
-	d.color = d3.select('span.color-ref.group'+i).style('color');
-});
 var arrowJumpDuration = 0.5;
 var minPxPerSec = 20;
 var secondsHeight = 20;
